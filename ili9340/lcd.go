@@ -27,12 +27,15 @@ func Open(o driver.Opener, rst gpio.Pin) (*LCD, error) {
 			MaxSpeed: 500000,
 		})
 	*/
+	rst.SetMode(gpio.ModeInput)
+	rst.SetMode(gpio.ModeOutput)
+
 	device, err := spi.Open(o)
 	if err != nil {
 		return nil, err
 	}
 
-	lcd = &LCD{
+	lcd := &LCD{
 		dev: device,
 		rst: rst,
 	}
@@ -45,13 +48,13 @@ func Open(o driver.Opener, rst gpio.Pin) (*LCD, error) {
 
 // DrawPixel sets a pixel at a position x, y.
 func (l *LCD) DrawPixel(x, y int, c color.Color) {
-	rgb := rgb565(c.RGBA())
+	rgb := rgb565(c)
 	l.PushColor(x, y, x+1, y+1, rgb)
 }
 
-// FillRect draw a rect at x,y
-func (l *LCD) FillRect(x, y, w, h int, c color.Color) {
-	rgb := rgb565(c.RGBA())
+// DrawRect draw a rect at x,y
+func (l *LCD) DrawRect(x, y, w, h int, c color.Color) {
+	rgb := rgb565(c)
 	l.PushColor(x, y, x+w-1, y+h-1, rgb)
 }
 
@@ -93,13 +96,21 @@ func (l *LCD) Close() {
 // PushColor sets a color to window
 func (l *LCD) PushColor(xs, ys, xe, ye int, c uint16) {
 	/* Column address */
-	l.writeReg(0x2A, xs>>8, xs&0xFF, xe>>8, xe&0xFF)
+	l.writeReg(0x2A,
+		uint8(xs>>8), uint8(xs&0xFF),
+		uint8(xe>>8), uint8(xe&0xFF),
+	)
 
 	/* Row address */
-	l.writeReg(0x2B, ys>>8, ys&0xFF, ye>>8, ye&0xFF)
+	l.writeReg(0x2B,
+		uint8(ys>>8), uint8(ys&0xFF),
+		uint8(ye>>8), uint8(ye&0xFF),
+	)
 
 	/* Memory write */
-	l.writeReg(0x2C, c>>8, c)
+	l.writeReg(0x2C,
+		uint8(c>>8), uint8(c),
+	)
 }
 
 // Rotate rotates display
@@ -107,19 +118,19 @@ func (l *LCD) Rotate(r int) {
 	var val byte
 	switch r {
 	case 270:
-		val = ILI9340_MADCTL_MV
+		val = ili9340_MADCTL_MV
 		l.w = ili9340_TFTHEIGHT
 		l.h = ili9340_TFTWIDTH
 	case 180:
-		val = ILI9340_MADCTL_MY
+		val = ili9340_MADCTL_MY
 		l.w = ili9340_TFTWIDTH
 		l.h = ili9340_TFTHEIGHT
 	case 90:
-		val = ILI9340_MADCTL_MV | ILI9340_MADCTL_MY | ILI9340_MADCTL_MX
+		val = ili9340_MADCTL_MV | ili9340_MADCTL_MY | ili9340_MADCTL_MX
 		l.w = ili9340_TFTHEIGHT
 		l.h = ili9340_TFTWIDTH
 	default:
-		val = ILI9340_MADCTL_MXILI9340_MADCTL_MX
+		val = ili9340_MADCTL_MX
 		l.w = ili9340_TFTWIDTH
 		l.h = ili9340_TFTHEIGHT
 	}
@@ -205,7 +216,5 @@ func (l *LCD) reset() {
 }
 
 func (l *LCD) writeReg(vs ...uint8) {
-	for _, v := range vs {
-		l.dev.Tx(vs, nil)
-	}
+	l.dev.Tx(vs, nil)
 }
