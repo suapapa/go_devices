@@ -3,6 +3,7 @@ package ili9340
 import (
 	"image"
 	"image/color"
+	"log"
 	"time"
 
 	"golang.org/x/exp/io/spi"
@@ -14,12 +15,12 @@ import (
 // LCD reperesents TFT-LCD panel which using ili9340 controller
 type LCD struct {
 	dev  *spi.Device
-	rst  gpio.Pin
+	dc   gpio.Pin
 	w, h int
 }
 
 // Open connets to the passed driver and sets things up
-func Open(o driver.Opener, rst gpio.Pin) (*LCD, error) {
+func Open(o driver.Opener, dc gpio.Pin) (*LCD, error) {
 	/*
 		dev, err := spi.Open(&spi.Devfs{
 			Dev:      "/dev/spidev0.1",
@@ -27,19 +28,21 @@ func Open(o driver.Opener, rst gpio.Pin) (*LCD, error) {
 			MaxSpeed: 500000,
 		})
 	*/
-	rst.SetMode(gpio.ModeInput)
-	rst.SetMode(gpio.ModeOutput)
+	dc.SetMode(gpio.ModeInput)
+	dc.SetMode(gpio.ModeOutput)
 
 	device, err := spi.Open(o)
 	if err != nil {
 		return nil, err
 	}
+	device.SetCSChange(true)
 
 	lcd := &LCD{
 		dev: device,
-		rst: rst,
+		dc:  dc,
 	}
 
+	lcd.reset()
 	lcd.init()
 	lcd.Rotate(0)
 
@@ -90,7 +93,7 @@ func (l *LCD) Height() int { return l.h }
 // Close takes care of cleaning things up.
 func (l *LCD) Close() {
 	l.dev.Close()
-	l.rst.Close()
+	l.dc.Close()
 }
 
 // PushColor sets a color to window
@@ -148,8 +151,6 @@ func (l *LCD) Invert(on bool) {
 }
 
 func (l *LCD) init() {
-	l.reset()
-
 	l.writeReg(0xEF, 0x03, 0x80, 0x02)
 	l.writeReg(0xCF, 0x00, 0xC1, 0x30)
 	l.writeReg(0xED, 0x64, 0x03, 0x12, 0x81)
@@ -207,14 +208,26 @@ func (l *LCD) init() {
 }
 
 func (l *LCD) reset() {
-	l.rst.Set()
-	time.Sleep(5 * time.Millisecond)
-	l.rst.Clear()
-	time.Sleep(20 * time.Millisecond)
-	l.rst.Set()
-	time.Sleep(120 * time.Millisecond)
+	// l.rst.Set()
+	// time.Sleep(5 * time.Millisecond)
+	// l.rst.Clear()
+	// time.Sleep(20 * time.Millisecond)
+	// l.rst.Set()
+	// time.Sleep(120 * time.Millisecond)
 }
 
 func (l *LCD) writeReg(vs ...uint8) {
-	l.dev.Tx(vs, nil)
+	if vs == nil || len(vs) == 0 {
+		return
+	}
+
+	l.dc.Clear()
+	log.Println("write command:", vs[:1])
+	l.dev.Tx(vs[:1], nil)
+
+	if len(vs) > 1 {
+		l.dc.Set()
+		log.Println("write data:", vs[1:])
+		l.dev.Tx(vs[1:], nil)
+	}
 }
