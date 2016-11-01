@@ -31,11 +31,13 @@ func Open(o driver.Opener, dc gpio.Pin) (*LCD, error) {
 	dc.SetMode(gpio.ModeInput)
 	dc.SetMode(gpio.ModeOutput)
 
+	log.Println("dc:", dc.Mode(), dc.Get())
+
 	device, err := spi.Open(o)
 	if err != nil {
 		return nil, err
 	}
-	device.SetCSChange(true)
+	device.SetCSChange(false)
 
 	lcd := &LCD{
 		dev: device,
@@ -51,14 +53,17 @@ func Open(o driver.Opener, dc gpio.Pin) (*LCD, error) {
 
 // DrawPixel sets a pixel at a position x, y.
 func (l *LCD) DrawPixel(x, y int, c color.Color) {
-	rgb := rgb565(c)
-	l.PushColor(x, y, x+1, y+1, rgb)
+	l.setWinAddr(x, y, x, y)
+	l.pushColor(rgb565(c))
 }
 
 // DrawRect draw a rect at x,y
 func (l *LCD) DrawRect(x, y, w, h int, c color.Color) {
 	rgb := rgb565(c)
-	l.PushColor(x, y, x+w-1, y+h-1, rgb)
+	l.setWinAddr(x, y, x+w-1, y+h-1)
+	for i := 0; i < w*h; i++ {
+		l.pushColor(rgb)
+	}
 }
 
 // SetImage draws an image on the display starting from x, y.
@@ -94,26 +99,6 @@ func (l *LCD) Height() int { return l.h }
 func (l *LCD) Close() {
 	l.dev.Close()
 	l.dc.Close()
-}
-
-// PushColor sets a color to window
-func (l *LCD) PushColor(xs, ys, xe, ye int, c uint16) {
-	/* Column address */
-	l.writeReg(0x2A,
-		uint8(xs>>8), uint8(xs&0xFF),
-		uint8(xe>>8), uint8(xe&0xFF),
-	)
-
-	/* Row address */
-	l.writeReg(0x2B,
-		uint8(ys>>8), uint8(ys&0xFF),
-		uint8(ye>>8), uint8(ye&0xFF),
-	)
-
-	/* Memory write */
-	l.writeReg(0x2C,
-		uint8(c>>8), uint8(c),
-	)
 }
 
 // Rotate rotates display
@@ -216,18 +201,42 @@ func (l *LCD) reset() {
 	// time.Sleep(120 * time.Millisecond)
 }
 
+func (l *LCD) setWinAddr(xs, ys, xe, ye int) {
+	/* Column address */
+	l.writeReg(0x2A,
+		uint8(xs>>8), uint8(xs&0xFF),
+		uint8(xe>>8), uint8(xe&0xFF),
+	)
+
+	/* Row address */
+	l.writeReg(0x2B,
+		uint8(ys>>8), uint8(ys&0xFF),
+		uint8(ye>>8), uint8(ye&0xFF),
+	)
+
+	/* Memory write */
+	l.writeReg(0x2C)
+}
+
+func (l *LCD) pushColor(c uint16) {
+	l.dc.Set()
+	l.dev.Tx([]uint8{uint8(c >> 8), uint8(c & 0xff)}, nil)
+}
+
 func (l *LCD) writeReg(vs ...uint8) {
 	if vs == nil || len(vs) == 0 {
 		return
 	}
 
 	l.dc.Clear()
-	log.Println("write command:", vs[:1])
+	// time.Sleep(100 * time.Millisecond)
+	log.Println("write command:", l.dc.Get(), vs[:1])
 	l.dev.Tx(vs[:1], nil)
 
 	if len(vs) > 1 {
 		l.dc.Set()
-		log.Println("write data:", vs[1:])
+		// time.Sleep(10 * time.Millisecond)
+		log.Println("write data:", l.dc.Get(), vs[1:])
 		l.dev.Tx(vs[1:], nil)
 	}
 }
