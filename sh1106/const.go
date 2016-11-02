@@ -1,6 +1,8 @@
 package sh1106
 
 const (
+	sh1106_I2C_ADDRESS = 0x3D // 011110+SA0+RW - 0x3C or 0x3D
+
 	// 128x64
 	sh1106_LCDWIDTH  = 128
 	sh1106_LCDHEIGHT = 64

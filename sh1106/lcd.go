@@ -14,7 +14,8 @@ type LCD struct {
 	spiDev *spi.Device
 	pinDC  gpio.Pin
 
-	w, h int
+	w, h uint
+	buff []byte
 }
 
 func OpenI2C(o i2c_driver.Opener, addr int) (*LCD, error) {
@@ -24,6 +25,10 @@ func OpenI2C(o i2c_driver.Opener, addr int) (*LCD, error) {
 	}
 
 	display := &LCD{i2cDev: dev}
+
+	// TODO: support not only 128x64
+	display.w = sh1106_LCDWIDTH
+	display.h = sh1106_LCDHEIGHT
 	display.init()
 
 	return display, nil
@@ -40,6 +45,10 @@ func OpenSpi(o spi_driver.Opener, dc gpio.Pin) (*LCD, error) {
 	dev.SetCSChange(false)
 
 	display := &LCD{spiDev: dev, pinDC: dc}
+
+	// TODO: support not only 128x64
+	display.w = sh1106_LCDWIDTH
+	display.h = sh1106_LCDHEIGHT
 	display.init()
 
 	return display, nil
@@ -56,8 +65,37 @@ func (l *LCD) Close() {
 	}
 }
 
-func (l *LCD) init() {
+func (l *LCD) DrawPixel(x, y uint, p bool) {
+	if x >= l.w || y >= l.h {
+		return
+	}
+
+	if p { // BLACK
+		l.buff[x+(y/8)*l.w] |= byte(1 << (y & 7))
+	} else { // WHITE
+		l.buff[x+(y/8)*l.w] &= byte(^(1 << (y & 7)))
+	}
+}
+
+func (l *LCD) Display() {
 	panic("not implemented")
+}
+
+func (l *LCD) Invert(i bool) {
+	if i {
+		l.sendCmd(sh1106_INVERTDISPLAY)
+	} else {
+		l.sendCmd(sh1106_NORMALDISPLAY)
+	}
+}
+
+func (l *LCD) init() {
+	if l.w != 128 && l.h != 64 {
+		panic("not implemented")
+	}
+
+	l.buff = make([]byte, l.w*l.h/8)
+	l.init128x64()
 }
 
 func (l *LCD) sendCmd(c byte) {
