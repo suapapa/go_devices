@@ -99,9 +99,20 @@ func (l *LCD) init() {
 }
 
 func (l *LCD) sendCmd(c byte) {
-	panic("not implemented")
+	if l.i2cDev != nil {
+		l.i2cDev.Write([]byte{0x00, c})
+	} else {
+		l.pinDC.Clear()
+		l.spiDev.Tx([]byte{c}, nil)
+	}
 }
 
-func (l *LCD) sendData(d byte) {
-	panic("not implemented")
+func (l *LCD) sendData(d ...byte) {
+	if l.i2cDev != nil {
+		l.i2cDev.Write([]byte{0x40})
+		l.i2cDev.Write(d)
+	} else {
+		l.pinDC.Set()
+		l.spiDev.Tx(d, nil)
+	}
 }
