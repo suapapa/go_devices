@@ -65,6 +65,12 @@ func (l *LCD) Close() {
 	}
 }
 
+func (l *LCD) Clear() {
+	for i := range l.buff {
+		l.buff[i] = 0x00
+	}
+}
+
 func (l *LCD) DrawPixel(x, y uint, p bool) {
 	if x >= l.w || y >= l.h {
 		return
