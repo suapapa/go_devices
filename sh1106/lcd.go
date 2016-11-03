@@ -78,7 +78,26 @@ func (l *LCD) DrawPixel(x, y uint, p bool) {
 }
 
 func (l *LCD) Display() {
-	panic("not implemented")
+	l.sendCmd(sh1106_SETLOWCOLUMN | 0x0)  // low col = 0
+	l.sendCmd(sh1106_SETHIGHCOLUMN | 0x0) // hi col = 0
+	l.sendCmd(sh1106_SETSTARTLINE | 0x0)  // line #0
+
+	// height := byte(l.h) >> 3 // 64 >> 3
+	width := byte(l.w) >> 3 // 132 >> 3
+
+	mRow := byte(0)
+	mCol := byte(2)
+
+	var r byte
+	for k := 0; k < len(l.buff); k += int(width) {
+		// send a bunch of data in one xmission
+		l.sendCmd(0xB0 + r + mRow)    //set page address
+		l.sendCmd(mCol & 0xf)         //set lower column address
+		l.sendCmd(0x10 | (mCol >> 4)) //set higher column address
+
+		l.sendData(l.buff[k : k+int(width)])
+		r++
+	}
 }
 
 func (l *LCD) Invert(i bool) {
@@ -107,7 +126,7 @@ func (l *LCD) sendCmd(c byte) {
 	}
 }
 
-func (l *LCD) sendData(d ...byte) {
+func (l *LCD) sendData(d []byte) {
 	if l.i2cDev != nil {
 		l.i2cDev.Write([]byte{0x40})
 		l.i2cDev.Write(d)
