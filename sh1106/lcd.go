@@ -119,7 +119,7 @@ func (l *LCD) init() {
 		panic("not implemented")
 	}
 
-	l.buff = make([]byte, l.w*l.h/8)
+	l.buff = make([]byte, (l.w*l.h+7)/8)
 	l.init128x64()
 }
 
