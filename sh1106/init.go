@@ -13,9 +13,9 @@ func (l *LCD) init128x64() {
 	l.sendCmd(sh1106_CHARGEPUMP)         // 0x8D
 
 	// if (vccstate == sh1106_EXTERNALVCC) {
-	l.sendCmd(0x10)
+	// l.sendCmd(0x10)
 	// } else {
-	//   l.sendCmd(0x14)
+	l.sendCmd(0x14)
 	// }
 
 	l.sendCmd(sh1106_MEMORYMODE) // 0x20
@@ -27,17 +27,17 @@ func (l *LCD) init128x64() {
 	l.sendCmd(sh1106_SETCONTRAST) // 0x81
 
 	// if (vccstate == sh1106_EXTERNALVCC) {
-	l.sendCmd(0x9F)
+	// l.sendCmd(0x9F)
 	// } else {
-	//   l.sendCmd(0xCF)
+	l.sendCmd(0xCF)
 	// }
 
 	l.sendCmd(sh1106_SETPRECHARGE) // 0xd9
 
 	//  if (vccstate == sh1106_EXTERNALVCC) {
-	l.sendCmd(0x22)
+	// l.sendCmd(0x22)
 	// } else {
-	//   l.sendCmd(0xF1)
+	l.sendCmd(0xF1)
 	// }
 
 	l.sendCmd(sh1106_SETVCOMDETECT) // 0xDB

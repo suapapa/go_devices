@@ -14,17 +14,19 @@ type LCD struct {
 	i2cDev *i2c.Device
 	spiDev *spi.Device
 
-	pinDC, pinRST gpio.Pin
+	pinDC, pinRST *gpio.Pin
 
 	w, h uint
 	buff []byte
 }
 
-func OpenI2C(o i2c_driver.Opener, addr int, rst gpio.Pin) (*LCD, error) {
+func OpenI2C(o i2c_driver.Opener, addr int, rst *gpio.Pin) (*LCD, error) {
 	display := &LCD{}
 
-	display.pinRST = rst
-	display.Reset()
+	if rst != nil {
+		display.pinRST = rst
+		display.Reset()
+	}
 
 	dev, err := i2c.Open(o, addr)
 	if err != nil {
@@ -40,11 +42,13 @@ func OpenI2C(o i2c_driver.Opener, addr int, rst gpio.Pin) (*LCD, error) {
 	return display, nil
 }
 
-func OpenSpi(o spi_driver.Opener, dc, rst gpio.Pin) (*LCD, error) {
+func OpenSpi(o spi_driver.Opener, dc, rst *gpio.Pin) (*LCD, error) {
 	display := &LCD{}
 
-	display.pinRST = rst
-	display.Reset()
+	if rst != nil {
+		display.pinRST = rst
+		display.Reset()
+	}
 
 	dev, err := spi.Open(o)
 	if err != nil {
@@ -53,8 +57,12 @@ func OpenSpi(o spi_driver.Opener, dc, rst gpio.Pin) (*LCD, error) {
 	dev.SetCSChange(false)
 	display.spiDev = dev
 
-	dc.SetMode(gpio.ModeInput)
-	dc.SetMode(gpio.ModeOutput)
+	if dc == nil {
+		panic("must set a dc pin")
+	}
+
+	(*dc).SetMode(gpio.ModeInput)
+	(*dc).SetMode(gpio.ModeOutput)
 	display.pinDC = dc
 
 	// TODO: support not only 128x64
@@ -72,22 +80,29 @@ func (l *LCD) Close() {
 
 	if l.spiDev != nil {
 		l.spiDev.Close()
-		l.pinDC.Close()
+		(*l.pinDC).Close()
 	}
 
-	l.pinRST.Close()
+	if l.pinRST != nil {
+		(*l.pinRST).Close()
+	}
 }
 
 func (l *LCD) Reset() {
-	// workaround for bug on initial mode
-	l.pinRST.SetMode(gpio.ModeInput)
-	l.pinRST.SetMode(gpio.ModeOutput)
+	if l.pinRST == nil {
+		return
+	}
+	rst := *l.pinRST
 
-	l.pinRST.Set()
+	// workaround for bug on initial mode
+	rst.SetMode(gpio.ModeInput)
+	rst.SetMode(gpio.ModeOutput)
+
+	rst.Set()
 	time.Sleep(1 * time.Millisecond)
-	l.pinRST.Clear()
+	rst.Clear()
 	time.Sleep(10 * time.Millisecond)
-	l.pinRST.Set()
+	rst.Set()
 }
 
 func (l *LCD) Clear() {
@@ -113,21 +128,33 @@ func (l *LCD) Display() {
 	l.sendCmd(sh1106_SETHIGHCOLUMN | 0x0) // hi col = 0
 	l.sendCmd(sh1106_SETSTARTLINE | 0x0)  // line #0
 
-	// height := byte(l.h) >> 3 // 64 >> 3
-	width := byte(l.w) >> 3 // 132 >> 3
+	height := byte(l.h) >> 3 // 64 >> 3 = 8
+	width := byte(l.w) >> 3  // 132 >> 3 = 16
 
 	mRow := byte(0)
 	mCol := byte(2)
 
-	var r byte
-	for k := 0; k < len(l.buff); k += int(width) {
-		// send a bunch of data in one xmission
-		l.sendCmd(0xB0 + r + mRow)    //set page address
+	// var r byte
+	// for k := 0; k < len(l.buff); k += int(width) {
+	// 	// send a bunch of data in one xmission
+	// 	l.sendCmd(0xB0 + r + mRow)    //set page address
+	// 	l.sendCmd(mCol & 0xf)         //set lower column address
+	// 	l.sendCmd(0x10 | (mCol >> 4)) //set higher column address
+	//
+	// 	l.sendData(l.buff[k : k+int(width)])
+	// 	r++
+	// }
+
+	k := 0
+	for i := byte(0); i < height; i++ {
+		l.sendCmd(0xB0 + i + mRow)    //set page address
 		l.sendCmd(mCol & 0xf)         //set lower column address
 		l.sendCmd(0x10 | (mCol >> 4)) //set higher column address
 
-		l.sendData(l.buff[k : k+int(width)])
-		r++
+		for j := byte(0); j < 8; j++ {
+			l.sendData(l.buff[k : k+int(width)])
+			k += int(width)
+		}
 	}
 }
 
@@ -140,31 +167,44 @@ func (l *LCD) Invert(i bool) {
 }
 
 func (l *LCD) init() {
-	l.Reset()
-
 	if l.w != 128 && l.h != 64 {
 		panic("not implemented")
 	}
 
 	l.buff = make([]byte, (l.w*l.h+7)/8)
 	l.init128x64()
+	l.display(true)
 }
 
-func (l *LCD) sendCmd(c byte) {
-	if l.i2cDev != nil {
-		l.i2cDev.Write([]byte{0x00, c})
+func (l *LCD) display(on bool) {
+	if on {
+		l.sendCmd(0x8D)
+		l.sendCmd(0x14)
+		l.sendCmd(0xAF)
 	} else {
-		l.pinDC.Clear()
-		l.spiDev.Tx([]byte{c}, nil)
+		l.sendCmd(0x8D)
+		l.sendCmd(0x10)
+		l.sendCmd(0xAE)
 	}
 }
 
-func (l *LCD) sendData(d []byte) {
+func (l *LCD) sendCmd(c byte) (err error) {
 	if l.i2cDev != nil {
-		l.i2cDev.Write([]byte{0x40})
-		l.i2cDev.Write(d)
+		err = l.i2cDev.Write([]byte{0x00, c})
 	} else {
-		l.pinDC.Set()
-		l.spiDev.Tx(d, nil)
+		(*l.pinDC).Clear()
+		err = l.spiDev.Tx([]byte{c}, nil)
 	}
+	return
+}
+
+func (l *LCD) sendData(d []byte) (err error) {
+	if l.i2cDev != nil {
+		// TODO: need realloc??
+		err = l.i2cDev.Write(append([]byte{0x40}, d...))
+	} else {
+		(*l.pinDC).Set()
+		err = l.spiDev.Tx(d, nil)
+	}
+	return
 }
