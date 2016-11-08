@@ -1,6 +1,8 @@
 package sh1106
 
 import (
+	"time"
+
 	"github.com/davecheney/gpio"
 	"golang.org/x/exp/io/i2c"
 	i2c_driver "golang.org/x/exp/io/i2c/driver"
@@ -10,21 +12,25 @@ import (
 
 type LCD struct {
 	i2cDev *i2c.Device
-
 	spiDev *spi.Device
-	pinDC  gpio.Pin
+
+	pinDC, pinRST gpio.Pin
 
 	w, h uint
 	buff []byte
 }
 
-func OpenI2C(o i2c_driver.Opener, addr int) (*LCD, error) {
+func OpenI2C(o i2c_driver.Opener, addr int, rst gpio.Pin) (*LCD, error) {
+	display := &LCD{}
+
+	display.pinRST = rst
+	display.Reset()
+
 	dev, err := i2c.Open(o, addr)
 	if err != nil {
 		return nil, err
 	}
-
-	display := &LCD{i2cDev: dev}
+	display.i2cDev = dev
 
 	// TODO: support not only 128x64
 	display.w = sh1106_LCDWIDTH
@@ -34,17 +40,22 @@ func OpenI2C(o i2c_driver.Opener, addr int) (*LCD, error) {
 	return display, nil
 }
 
-func OpenSpi(o spi_driver.Opener, dc gpio.Pin) (*LCD, error) {
-	dc.SetMode(gpio.ModeInput)
-	dc.SetMode(gpio.ModeOutput)
+func OpenSpi(o spi_driver.Opener, dc, rst gpio.Pin) (*LCD, error) {
+	display := &LCD{}
+
+	display.pinRST = rst
+	display.Reset()
 
 	dev, err := spi.Open(o)
 	if err != nil {
 		return nil, err
 	}
 	dev.SetCSChange(false)
+	display.spiDev = dev
 
-	display := &LCD{spiDev: dev, pinDC: dc}
+	dc.SetMode(gpio.ModeInput)
+	dc.SetMode(gpio.ModeOutput)
+	display.pinDC = dc
 
 	// TODO: support not only 128x64
 	display.w = sh1106_LCDWIDTH
@@ -63,6 +74,20 @@ func (l *LCD) Close() {
 		l.spiDev.Close()
 		l.pinDC.Close()
 	}
+
+	l.pinRST.Close()
+}
+
+func (l *LCD) Reset() {
+	// workaround for bug on initial mode
+	l.pinRST.SetMode(gpio.ModeInput)
+	l.pinRST.SetMode(gpio.ModeOutput)
+
+	l.pinRST.Set()
+	time.Sleep(1 * time.Millisecond)
+	l.pinRST.Clear()
+	time.Sleep(10 * time.Millisecond)
+	l.pinRST.Set()
 }
 
 func (l *LCD) Clear() {
@@ -115,6 +140,8 @@ func (l *LCD) Invert(i bool) {
 }
 
 func (l *LCD) init() {
+	l.Reset()
+
 	if l.w != 128 && l.h != 64 {
 		panic("not implemented")
 	}
