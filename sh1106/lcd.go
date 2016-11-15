@@ -116,9 +116,9 @@ func (l *LCD) DrawPixel(x, y int, p bool) {
 		return
 	}
 
-	if p { // BLACK
+	if p { // white
 		l.buff[x+(y/8)*l.w] |= byte(1 << (uint(y) & 7))
-	} else { // WHITE
+	} else { // black
 		l.buff[x+(y/8)*l.w] &= byte(^(1 << (uint(y) & 7)))
 	}
 }
@@ -133,17 +133,6 @@ func (l *LCD) Display() {
 
 	mRow := byte(0)
 	mCol := byte(2)
-
-	// var r byte
-	// for k := 0; k < len(l.buff); k += int(width) {
-	// 	// send a bunch of data in one xmission
-	// 	l.sendCmd(0xB0 + r + mRow)    //set page address
-	// 	l.sendCmd(mCol & 0xf)         //set lower column address
-	// 	l.sendCmd(0x10 | (mCol >> 4)) //set higher column address
-	//
-	// 	l.sendData(l.buff[k : k+int(width)])
-	// 	r++
-	// }
 
 	k := 0
 	for i := byte(0); i < height; i++ {
@@ -200,7 +189,6 @@ func (l *LCD) sendCmd(c byte) (err error) {
 
 func (l *LCD) sendData(d []byte) (err error) {
 	if l.i2cDev != nil {
-		// TODO: need realloc??
 		err = l.i2cDev.Write(append([]byte{0x40}, d...))
 	} else {
 		(*l.pinDC).Set()
