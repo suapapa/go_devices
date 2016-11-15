@@ -1,4 +1,4 @@
-package sh1106
+package sh1106 // import "github.com/suapapa/go_devices/sh1106"
 
 import (
 	"time"
@@ -10,16 +10,19 @@ import (
 	spi_driver "golang.org/x/exp/io/spi/driver"
 )
 
+// LCD represents a shll06 drived OLED display
 type LCD struct {
 	i2cDev *i2c.Device
 	spiDev *spi.Device
 
-	pinDC, pinRST *gpio.Pin
+	pinRST *gpio.Pin // for H/W reset
+	pinDC  *gpio.Pin // for Data/Command in SPI mode
 
 	w, h int
 	buff []byte
 }
 
+// OpenSpi opens a sh1106 LCD in I2C mode
 func OpenI2C(o i2c_driver.Opener, addr int, rst *gpio.Pin) (*LCD, error) {
 	display := &LCD{}
 
@@ -42,6 +45,7 @@ func OpenI2C(o i2c_driver.Opener, addr int, rst *gpio.Pin) (*LCD, error) {
 	return display, nil
 }
 
+// OpenSpi opens a sh1106 LCD in SPI mode
 func OpenSpi(o spi_driver.Opener, dc, rst *gpio.Pin) (*LCD, error) {
 	display := &LCD{}
 
@@ -88,6 +92,7 @@ func (l *LCD) Close() {
 	}
 }
 
+// Reset does H/W reset if pinRst is not nil
 func (l *LCD) Reset() {
 	if l.pinRST == nil {
 		return
@@ -105,12 +110,14 @@ func (l *LCD) Reset() {
 	rst.Set()
 }
 
+// Clear clean internal buffer
 func (l *LCD) Clear() {
 	for i := range l.buff {
 		l.buff[i] = 0x00
 	}
 }
 
+// DrawPixel sets a dot to the internal buffer
 func (l *LCD) DrawPixel(x, y int, p bool) {
 	if x >= l.w || y >= l.h {
 		return
@@ -123,6 +130,7 @@ func (l *LCD) DrawPixel(x, y int, p bool) {
 	}
 }
 
+// Display sends what buffer contents to LCD and turn it on
 func (l *LCD) Display() {
 	l.sendCmd(sh1106_SETLOWCOLUMN | 0x0)  // low col = 0
 	l.sendCmd(sh1106_SETHIGHCOLUMN | 0x0) // hi col = 0
@@ -147,6 +155,7 @@ func (l *LCD) Display() {
 	}
 }
 
+// Invert flips black and white on the LCD
 func (l *LCD) Invert(i bool) {
 	if i {
 		l.sendCmd(sh1106_INVERTDISPLAY)

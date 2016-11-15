@@ -1,25 +1,24 @@
 package sh1106
 
-import (
-	"image"
-	"image/color"
-)
+import "image"
 
-func (l *LCD) ColorModel() color.Model {
-	return color.GrayModel
-}
+// Implemet image.Image interface:
+// func (l *LCD) ColorModel() color.Model {
+// 	return color.GrayModel
+// }
+//
+// func (l *LCD) Bounds() image.Rectangle {
+// 	return image.Rect(0, 0, int(l.w), int(l.h))
+// }
+//
+// func (l *LCD) At(x, y int) color.Color {
+// 	if l.buff[x+(y/8)*l.w]&byte(1<<(uint(y)&7)) == 0x00 {
+// 		return color.Gray{Y: 0x00}
+// 	}
+// 	return color.Gray{Y: 0xFF}
+// }
 
-func (l *LCD) Bounds() image.Rectangle {
-	return image.Rect(0, 0, int(l.w), int(l.h))
-}
-
-func (l *LCD) At(x, y int) color.Color {
-	if l.buff[x+(y/8)*l.w]&byte(1<<(uint(y)&7)) == 0x00 {
-		return color.Gray{Y: 0x00}
-	}
-	return color.Gray{Y: 0xFF}
-}
-
+// DrawImage draws a image to the internal buffer
 func (l *LCD) DrawImage(i image.Image) {
 	imgW, imgH := i.Bounds().Dx(), i.Bounds().Dy()
 
