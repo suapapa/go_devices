@@ -16,7 +16,7 @@ type LCD struct {
 
 	pinDC, pinRST *gpio.Pin
 
-	w, h uint
+	w, h int
 	buff []byte
 }
 
@@ -111,15 +111,15 @@ func (l *LCD) Clear() {
 	}
 }
 
-func (l *LCD) DrawPixel(x, y uint, p bool) {
+func (l *LCD) DrawPixel(x, y int, p bool) {
 	if x >= l.w || y >= l.h {
 		return
 	}
 
 	if p { // BLACK
-		l.buff[x+(y/8)*l.w] |= byte(1 << (y & 7))
+		l.buff[x+(y/8)*l.w] |= byte(1 << (uint(y) & 7))
 	} else { // WHITE
-		l.buff[x+(y/8)*l.w] &= byte(^(1 << (y & 7)))
+		l.buff[x+(y/8)*l.w] &= byte(^(1 << (uint(y) & 7)))
 	}
 }
 
