@@ -3,6 +3,8 @@ package nunchuck // import "github.com/suapapa/go_devices/nunchuck"
 // REF: http://playground.arduino.cc/Main/WiiChuckClass
 
 import (
+	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -74,10 +76,12 @@ func Open(o i2c_driver.Opener) (*Controller, error) {
 	return con, nil
 }
 
+// Close closed the controller
 func (c *Controller) Close() {
 	c.dev.Close()
 }
 
+// Calibrate set fix zero position for joystick and accelometer
 func (c *Controller) Calibrate() {
 	c.Update()
 
@@ -91,6 +95,7 @@ func (c *Controller) Calibrate() {
 	c.zeroAccelX = c.accelZ()
 }
 
+// Update reads data from the controller
 func (c *Controller) Update() {
 	c.Lock()
 	defer c.Unlock()
@@ -99,6 +104,7 @@ func (c *Controller) Update() {
 	c.dev.Write([]byte{0x00})
 }
 
+// JoyX returns joystic X axis
 func (c *Controller) JoyX() int {
 	c.RLock()
 	defer c.Unlock()
@@ -106,6 +112,7 @@ func (c *Controller) JoyX() int {
 	return int(c.buff[idxJoyX]) - c.zeroJoyX
 }
 
+// JoyY returns joystic Y axis
 func (c *Controller) JoyY() int {
 	c.RLock()
 	defer c.Unlock()
@@ -113,6 +120,7 @@ func (c *Controller) JoyY() int {
 	return int(c.buff[idxJoyY]) - c.zeroJoyY
 }
 
+// AccelX returns accelometer X axis
 func (c *Controller) AccelX() int {
 	c.RLock()
 	defer c.Unlock()
@@ -120,6 +128,7 @@ func (c *Controller) AccelX() int {
 	return c.accelX() - c.zeroAccelX
 }
 
+// AccelY returns accelometer Y axis
 func (c *Controller) AccelY() int {
 	c.RLock()
 	defer c.Unlock()
@@ -127,6 +136,7 @@ func (c *Controller) AccelY() int {
 	return c.accelY() - c.zeroAccelY
 }
 
+// AccelZ returns accelometer Z axis
 func (c *Controller) AccelZ() int {
 	c.RLock()
 	defer c.Unlock()
@@ -134,6 +144,7 @@ func (c *Controller) AccelZ() int {
 	return c.accelZ() - c.zeroAccelZ
 }
 
+// BtnZ returns button Z is pressed
 func (c *Controller) BtnZ() bool {
 	c.RLock()
 	defer c.Unlock()
@@ -141,6 +152,7 @@ func (c *Controller) BtnZ() bool {
 	return (c.buff[idxMisc] & maskMiscBtnZ) == 0
 }
 
+// BtnC returns button C is pressed
 func (c *Controller) BtnC() bool {
 	c.RLock()
 	defer c.Unlock()
@@ -148,9 +160,26 @@ func (c *Controller) BtnC() bool {
 	return (c.buff[idxMisc] & maskMiscBtnC) == 0
 }
 
+// Roll returns roll in degrees
+func (c *Controller) Roll() float64 {
+	aX, aZ := float64(c.AccelX()), float64(c.AccelZ())
+	return math.Atan2(aX, aZ) / math.Pi * 180
+}
+
+// Pitch returns pitch in degrees
+func (c *Controller) Pitch() float64 {
+	aY := float64(c.AccelY())
+	return math.Acos(aY/radius) / math.Pi * 180
+}
+
+// String implemets stringer interface
 func (c *Controller) String() string {
-	// TODO:
-	return ""
+	return fmt.Sprintf(
+		"joy(X: %v, Y: %v) accel(X: %v, Y: %v, Z: %v) Btn(Z: %v, C: %v)",
+		c.JoyX(), c.JoyY(),
+		c.AccelX(), c.AccelY(), c.AccelZ(),
+		c.BtnZ(), c.BtnC(),
+	)
 }
 
 func (c *Controller) init() (err error) {
