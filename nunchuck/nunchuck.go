@@ -13,19 +13,7 @@ import (
 )
 
 const (
-	addr = 0x52
-
-	radius = 210
-
-	dftZeroJoyX   = 124
-	dftZeroJoyY   = 132
-	dftZeroAccelX = 510
-	dftZeroAccelY = 490
-	dftZeroAccelZ = 460
-)
-
-// consts for internel buff index
-const (
+	// for internel buff index
 	idxJoyX = iota
 	idxJoyY
 	idxAccelX
@@ -33,12 +21,25 @@ const (
 	idxAccelZ
 	idxMisc
 
+	// I2C address
+	addr = 0x52
+
+	// default zero values
+	dftZeroJoyX   = 124
+	dftZeroJoyY   = 132
+	dftZeroAccelX = 510
+	dftZeroAccelY = 490
+	dftZeroAccelZ = 460
+
+	// for bitmask
 	maskMiscAccel       = 0x03
 	maskMiscAccelXShift = 2
 	maskMiscAccelYShift = 4
 	maskMiscAccelZShift = 6
 	maskMiscBtnZ        = 0x01
 	maskMiscBtnC        = 0x02
+
+	radius = 210
 )
 
 // Controller represents a nunchuck controller
@@ -81,6 +82,19 @@ func (c *Controller) Close() {
 	c.dev.Close()
 }
 
+// Update reads data from the controller
+func (c *Controller) Update() (err error) {
+	c.Lock()
+	defer c.Unlock()
+
+	err = c.dev.Read(c.buff[:])
+	if err != nil {
+		return
+	}
+	c.dev.Write([]byte{0x00})
+	return
+}
+
 // Calibrate set fix zero position for joystick and accelometer
 func (c *Controller) Calibrate() {
 	c.Update()
@@ -93,15 +107,6 @@ func (c *Controller) Calibrate() {
 	c.zeroAccelX = c.accelX()
 	c.zeroAccelX = c.accelY()
 	c.zeroAccelX = c.accelZ()
-}
-
-// Update reads data from the controller
-func (c *Controller) Update() {
-	c.Lock()
-	defer c.Unlock()
-
-	c.dev.Read(c.buff[:])
-	c.dev.Write([]byte{0x00})
 }
 
 // JoyX returns joystic X axis
