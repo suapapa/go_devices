@@ -1,6 +1,8 @@
-package nunchuck // import "github.com/suapapa/go_devices/nunchuck"
+// Copyright 2016, Homin Lee <homin.lee@suapapa.net>. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-// REF: http://playground.arduino.cc/Main/WiiChuckClass
+package nunchuck // import "github.com/suapapa/go_devices/nunchuck"
 
 import (
 	"fmt"
