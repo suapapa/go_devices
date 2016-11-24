@@ -16,9 +16,9 @@ const (
 	// for internel buff index
 	idxJoyX = iota
 	idxJoyY
-	idxAccelX
-	idxAccelY
-	idxAccelZ
+	idxAngleX
+	idxAngleY
+	idxAngleZ
 	idxMisc
 
 	// I2C address
@@ -27,15 +27,15 @@ const (
 	// default zero values
 	dftZeroJoyX   = 124
 	dftZeroJoyY   = 132
-	dftZeroAccelX = 510
-	dftZeroAccelY = 490
-	dftZeroAccelZ = 460
+	dftZeroAngleX = 510
+	dftZeroAngleY = 490
+	dftZeroAngleZ = 460
 
 	// for bitmask
-	maskMiscAccel       = 0x03
-	maskMiscAccelXShift = 2
-	maskMiscAccelYShift = 4
-	maskMiscAccelZShift = 6
+	maskMiscAngle       = 0x03
+	maskMiscAngleXShift = 2
+	maskMiscAngleYShift = 4
+	maskMiscAngleZShift = 6
 	maskMiscBtnZ        = 0x01
 	maskMiscBtnC        = 0x02
 
@@ -48,7 +48,7 @@ type Controller struct {
 	buff [6]byte
 
 	zeroJoyX, zeroJoyY                 int
-	zeroAccelX, zeroAccelY, zeroAccelZ int
+	zeroAngleX, zeroAngleY, zeroAngleZ int
 
 	sync.RWMutex
 }
@@ -64,9 +64,9 @@ func Open(o i2c_driver.Opener) (*Controller, error) {
 		dev:        dev,
 		zeroJoyX:   dftZeroJoyX,
 		zeroJoyY:   dftZeroJoyY,
-		zeroAccelX: dftZeroAccelX,
-		zeroAccelY: dftZeroAccelY,
-		zeroAccelZ: dftZeroAccelZ,
+		zeroAngleX: dftZeroAngleX,
+		zeroAngleY: dftZeroAngleY,
+		zeroAngleZ: dftZeroAngleZ,
 	}
 
 	err = con.init()
@@ -95,7 +95,7 @@ func (c *Controller) Update() (err error) {
 	return
 }
 
-// Calibrate set fix zero position for joystick and accelometer
+// Calibrate set fix zero position for joystick and angleometer
 func (c *Controller) Calibrate() {
 	c.Update()
 
@@ -104,15 +104,15 @@ func (c *Controller) Calibrate() {
 
 	c.zeroJoyX = int(c.buff[idxJoyX])
 	c.zeroJoyY = int(c.buff[idxJoyY])
-	c.zeroAccelX = c.accelX()
-	c.zeroAccelX = c.accelY()
-	c.zeroAccelX = c.accelZ()
+	c.zeroAngleX = c.angleX()
+	c.zeroAngleX = c.angleY()
+	c.zeroAngleX = c.angleZ()
 }
 
 // JoyX returns joystic X axis
 func (c *Controller) JoyX() int {
 	c.RLock()
-	defer c.Unlock()
+	defer c.RUnlock()
 
 	return int(c.buff[idxJoyX]) - c.zeroJoyX
 }
@@ -120,39 +120,39 @@ func (c *Controller) JoyX() int {
 // JoyY returns joystic Y axis
 func (c *Controller) JoyY() int {
 	c.RLock()
-	defer c.Unlock()
+	defer c.RUnlock()
 
 	return int(c.buff[idxJoyY]) - c.zeroJoyY
 }
 
-// AccelX returns accelometer X axis
-func (c *Controller) AccelX() int {
+// AngleX returns angleometer X axis
+func (c *Controller) AngleX() int {
 	c.RLock()
-	defer c.Unlock()
+	defer c.RUnlock()
 
-	return c.accelX() - c.zeroAccelX
+	return c.angleX() - c.zeroAngleX
 }
 
-// AccelY returns accelometer Y axis
-func (c *Controller) AccelY() int {
+// AngleY returns angleometer Y axis
+func (c *Controller) AngleY() int {
 	c.RLock()
-	defer c.Unlock()
+	defer c.RUnlock()
 
-	return c.accelY() - c.zeroAccelY
+	return c.angleY() - c.zeroAngleY
 }
 
-// AccelZ returns accelometer Z axis
-func (c *Controller) AccelZ() int {
+// AngleZ returns angleometer Z axis
+func (c *Controller) AngleZ() int {
 	c.RLock()
-	defer c.Unlock()
+	defer c.RUnlock()
 
-	return c.accelZ() - c.zeroAccelZ
+	return c.angleZ() - c.zeroAngleZ
 }
 
 // BtnZ returns button Z is pressed
 func (c *Controller) BtnZ() bool {
 	c.RLock()
-	defer c.Unlock()
+	defer c.RUnlock()
 
 	return (c.buff[idxMisc] & maskMiscBtnZ) == 0
 }
@@ -160,29 +160,29 @@ func (c *Controller) BtnZ() bool {
 // BtnC returns button C is pressed
 func (c *Controller) BtnC() bool {
 	c.RLock()
-	defer c.Unlock()
+	defer c.RUnlock()
 
 	return (c.buff[idxMisc] & maskMiscBtnC) == 0
 }
 
 // Roll returns roll in degrees
 func (c *Controller) Roll() float64 {
-	aX, aZ := float64(c.AccelX()), float64(c.AccelZ())
+	aX, aZ := float64(c.AngleX()), float64(c.AngleZ())
 	return math.Atan2(aX, aZ) / math.Pi * 180
 }
 
 // Pitch returns pitch in degrees
 func (c *Controller) Pitch() float64 {
-	aY := float64(c.AccelY())
+	aY := float64(c.AngleY())
 	return math.Acos(aY/radius) / math.Pi * 180
 }
 
 // String implemets stringer interface
 func (c *Controller) String() string {
 	return fmt.Sprintf(
-		"joy(X: %v, Y: %v) accel(X: %v, Y: %v, Z: %v) Btn(Z: %v, C: %v)",
+		"joy(X: %v, Y: %v) angle(X: %v, Y: %v, Z: %v) Btn(Z: %v, C: %v)",
 		c.JoyX(), c.JoyY(),
-		c.AccelX(), c.AccelY(), c.AccelZ(),
+		c.AngleX(), c.AngleY(), c.AngleZ(),
 		c.BtnZ(), c.BtnC(),
 	)
 }
@@ -197,17 +197,17 @@ func (c *Controller) init() (err error) {
 	return
 }
 
-func (c *Controller) accelX() int {
-	return int(c.buff[idxAccelX])<<2 +
-		int((c.buff[idxMisc]>>maskMiscAccelXShift)&maskMiscAccel)
+func (c *Controller) angleX() int {
+	return int(c.buff[idxAngleX])<<2 +
+		int((c.buff[idxMisc]>>maskMiscAngleXShift)&maskMiscAngle)
 }
 
-func (c *Controller) accelY() int {
-	return int(c.buff[idxAccelY])<<2 +
-		int((c.buff[idxMisc]>>maskMiscAccelYShift)&maskMiscAccel)
+func (c *Controller) angleY() int {
+	return int(c.buff[idxAngleY])<<2 +
+		int((c.buff[idxMisc]>>maskMiscAngleYShift)&maskMiscAngle)
 }
 
-func (c *Controller) accelZ() int {
-	return int(c.buff[idxAccelZ])<<2 +
-		int((c.buff[idxMisc]>>maskMiscAccelZShift)&maskMiscAccel)
+func (c *Controller) angleZ() int {
+	return int(c.buff[idxAngleZ])<<2 +
+		int((c.buff[idxMisc]>>maskMiscAngleZShift)&maskMiscAngle)
 }
