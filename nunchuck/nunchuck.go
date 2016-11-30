@@ -18,9 +18,9 @@ const (
 	// for internel buff index
 	idxJoyX = iota
 	idxJoyY
-	idxAngleX
-	idxAngleY
-	idxAngleZ
+	idxAccelX
+	idxAccelY
+	idxAccelZ
 	idxMisc
 
 	// I2C address
@@ -29,15 +29,15 @@ const (
 	// default zero values
 	dftZeroJoyX   = 124
 	dftZeroJoyY   = 132
-	dftZeroAngleX = 510
-	dftZeroAngleY = 490
-	dftZeroAngleZ = 460
+	dftZeroAccelX = 510
+	dftZeroAccelY = 490
+	dftZeroAccelZ = 460
 
 	// for bitmask
-	maskMiscAngle       = 0x03
-	maskMiscAngleXShift = 2
-	maskMiscAngleYShift = 4
-	maskMiscAngleZShift = 6
+	maskMiscAccel       = 0x03
+	maskMiscAccelXShift = 2
+	maskMiscAccelYShift = 4
+	maskMiscAccelZShift = 6
 	maskMiscBtnZ        = 0x01
 	maskMiscBtnC        = 0x02
 
@@ -50,7 +50,7 @@ type Controller struct {
 	buff [6]byte
 
 	zeroJoyX, zeroJoyY                 int
-	zeroAngleX, zeroAngleY, zeroAngleZ int
+	zeroAccelX, zeroAccelY, zeroAccelZ int
 
 	sync.RWMutex
 }
@@ -66,9 +66,9 @@ func Open(o i2c_driver.Opener) (*Controller, error) {
 		dev:        dev,
 		zeroJoyX:   dftZeroJoyX,
 		zeroJoyY:   dftZeroJoyY,
-		zeroAngleX: dftZeroAngleX,
-		zeroAngleY: dftZeroAngleY,
-		zeroAngleZ: dftZeroAngleZ,
+		zeroAccelX: dftZeroAccelX,
+		zeroAccelY: dftZeroAccelY,
+		zeroAccelZ: dftZeroAccelZ,
 	}
 
 	err = con.init()
@@ -97,7 +97,7 @@ func (c *Controller) Update() (err error) {
 	return
 }
 
-// Calibrate set fix zero position for joystick and angleometer
+// Calibrate set fix zero position for joystick and accelometer
 func (c *Controller) Calibrate() {
 	c.Update()
 
@@ -106,9 +106,9 @@ func (c *Controller) Calibrate() {
 
 	c.zeroJoyX = int(c.buff[idxJoyX])
 	c.zeroJoyY = int(c.buff[idxJoyY])
-	c.zeroAngleX = c.angleX()
-	c.zeroAngleX = c.angleY()
-	c.zeroAngleX = c.angleZ()
+	c.zeroAccelX = c.accelX()
+	c.zeroAccelX = c.accelY()
+	c.zeroAccelX = c.accelZ()
 }
 
 // JoyX returns joystic X axis
@@ -127,28 +127,28 @@ func (c *Controller) JoyY() int {
 	return int(c.buff[idxJoyY]) - c.zeroJoyY
 }
 
-// AngleX returns angleometer X axis
-func (c *Controller) AngleX() int {
+// AccelX returns accelometer X axis
+func (c *Controller) AccelX() int {
 	c.RLock()
 	defer c.RUnlock()
 
-	return c.angleX() - c.zeroAngleX
+	return c.accelX() - c.zeroAccelX
 }
 
-// AngleY returns angleometer Y axis
-func (c *Controller) AngleY() int {
+// AccelY returns accelometer Y axis
+func (c *Controller) AccelY() int {
 	c.RLock()
 	defer c.RUnlock()
 
-	return c.angleY() - c.zeroAngleY
+	return c.accelY() - c.zeroAccelY
 }
 
-// AngleZ returns angleometer Z axis
-func (c *Controller) AngleZ() int {
+// AccelZ returns accelometer Z axis
+func (c *Controller) AccelZ() int {
 	c.RLock()
 	defer c.RUnlock()
 
-	return c.angleZ() - c.zeroAngleZ
+	return c.accelZ() - c.zeroAccelZ
 }
 
 // BtnZ returns button Z is pressed
@@ -169,22 +169,22 @@ func (c *Controller) BtnC() bool {
 
 // Roll returns roll in degrees
 func (c *Controller) Roll() float64 {
-	aX, aZ := float64(c.AngleX()), float64(c.AngleZ())
+	aX, aZ := float64(c.AccelX()), float64(c.AccelZ())
 	return math.Atan2(aX, aZ) / math.Pi * 180
 }
 
 // Pitch returns pitch in degrees
 func (c *Controller) Pitch() float64 {
-	aY := float64(c.AngleY())
+	aY := float64(c.AccelY())
 	return math.Acos(aY/radius) / math.Pi * 180
 }
 
 // String implemets stringer interface
 func (c *Controller) String() string {
 	return fmt.Sprintf(
-		"joy(X: %v, Y: %v) angle(X: %v, Y: %v, Z: %v) Btn(Z: %v, C: %v)",
+		"joy(X: %v, Y: %v) accel(X: %v, Y: %v, Z: %v) Btn(Z: %v, C: %v)",
 		c.JoyX(), c.JoyY(),
-		c.AngleX(), c.AngleY(), c.AngleZ(),
+		c.AccelX(), c.AccelY(), c.AccelZ(),
 		c.BtnZ(), c.BtnC(),
 	)
 }
@@ -199,17 +199,17 @@ func (c *Controller) init() (err error) {
 	return
 }
 
-func (c *Controller) angleX() int {
-	return int(c.buff[idxAngleX])<<2 +
-		int((c.buff[idxMisc]>>maskMiscAngleXShift)&maskMiscAngle)
+func (c *Controller) accelX() int {
+	return int(c.buff[idxAccelX])<<2 +
+		int((c.buff[idxMisc]>>maskMiscAccelXShift)&maskMiscAccel)
 }
 
-func (c *Controller) angleY() int {
-	return int(c.buff[idxAngleY])<<2 +
-		int((c.buff[idxMisc]>>maskMiscAngleYShift)&maskMiscAngle)
+func (c *Controller) accelY() int {
+	return int(c.buff[idxAccelY])<<2 +
+		int((c.buff[idxMisc]>>maskMiscAccelYShift)&maskMiscAccel)
 }
 
-func (c *Controller) angleZ() int {
-	return int(c.buff[idxAngleZ])<<2 +
-		int((c.buff[idxMisc]>>maskMiscAngleZShift)&maskMiscAngle)
+func (c *Controller) accelZ() int {
+	return int(c.buff[idxAccelZ])<<2 +
+		int((c.buff[idxMisc]>>maskMiscAccelZShift)&maskMiscAccel)
 }
