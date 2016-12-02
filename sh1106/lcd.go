@@ -1,6 +1,7 @@
 package sh1106 // import "github.com/suapapa/go_devices/sh1106"
 
 import (
+	"errors"
 	"time"
 
 	"github.com/davecheney/gpio"
@@ -22,7 +23,17 @@ type LCD struct {
 	buff []byte
 }
 
-// OpenSpi opens a sh1106 LCD in I2C mode
+// Open opens a sh1106 LCD in I2C or SPI mode
+func Open(o interface{}, addr int, rst, dc *gpio.Pin) (*LCD, error) {
+	if i2cO, ok := o.(i2c_driver.Opener); ok {
+		return OpenI2C(i2cO, addr, rst)
+	} else if spiO, ok := o.(spi_driver.Opener); ok {
+		return OpenSpi(spiO, dc, rst)
+	}
+	return nil, errors.New("sh1106: unknown driver.Opener")
+}
+
+// OpenI2C opens a sh1106 LCD in I2C mode
 func OpenI2C(o i2c_driver.Opener, addr int, rst *gpio.Pin) (*LCD, error) {
 	display := &LCD{}
 
