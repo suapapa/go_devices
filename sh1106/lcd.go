@@ -7,7 +7,8 @@ package sh1106 // import "github.com/suapapa/go_devices/sh1106"
 import (
 	"time"
 
-	"github.com/davecheney/gpio"
+	"github.com/goiot/exp/gpio"
+	gpio_driver "github.com/goiot/exp/gpio/driver"
 	"golang.org/x/exp/io/i2c"
 	i2c_driver "golang.org/x/exp/io/i2c/driver"
 	"golang.org/x/exp/io/spi"
@@ -16,11 +17,9 @@ import (
 
 // LCD represents a shll06 drived OLED display
 type LCD struct {
-	i2cDev *i2c.Device
-	spiDev *spi.Device
-
-	pinRST *gpio.Pin // for H/W reset
-	pinDC  *gpio.Pin // for Data/Command in SPI mode
+	i2cDev  *i2c.Device
+	spiDev  *spi.Device
+	gpioDev *gpio.Device
 
 	w, h int
 	buff []byte
@@ -37,19 +36,21 @@ type LCD struct {
 // }
 
 // OpenI2C opens a sh1106 LCD in I2C mode
-func OpenI2C(bus i2c_driver.Opener, addr int, rst *gpio.Pin) (*LCD, error) {
+func OpenI2C(bus i2c_driver.Opener, ctr gpio_driver.Opener, addr int) (*LCD, error) {
 	lcd := &LCD{}
 
-	if rst != nil {
-		lcd.pinRST = rst
-		lcd.Reset()
-	}
-
-	dev, err := i2c.Open(bus, addr)
+	i2cDev, err := i2c.Open(bus, addr)
 	if err != nil {
 		return nil, err
 	}
-	lcd.i2cDev = dev
+	lcd.i2cDev = i2cDev
+
+	gpioDev, err := gpio.Open(ctr)
+	if err != nil {
+		return nil, err
+	}
+	lcd.gpioDev = gpioDev
+	// TODO: check RST pin in gpioDev
 
 	// TODO: support not only 128x64
 	lcd.w = sh1106_LCDWIDTH
@@ -60,13 +61,8 @@ func OpenI2C(bus i2c_driver.Opener, addr int, rst *gpio.Pin) (*LCD, error) {
 }
 
 // OpenSpi opens a sh1106 LCD in SPI mode
-func OpenSpi(bus spi_driver.Opener, dc, rst *gpio.Pin) (*LCD, error) {
+func OpenSpi(bus spi_driver.Opener, ctr gpio_driver.Opener) (*LCD, error) {
 	lcd := &LCD{}
-
-	if rst != nil {
-		display.pinRST = rst
-		display.Reset()
-	}
 
 	dev, err := spi.Open(bus)
 	if err != nil {
@@ -75,13 +71,12 @@ func OpenSpi(bus spi_driver.Opener, dc, rst *gpio.Pin) (*LCD, error) {
 	dev.SetCSChange(false)
 	lcd.spiDev = dev
 
-	if dc == nil {
-		panic("must set a dc pin")
+	gpioDev, err := gpio.Open(ctr)
+	if err != nil {
+		return nil, err
 	}
-
-	(*dc).SetMode(gpio.ModeInput)
-	(*dc).SetMode(gpio.ModeOutput)
-	lcd.pinDC = dc
+	lcd.gpioDev = gpioDev
+	// TODO: check DC and RST pin in gpioDev
 
 	// TODO: support not only 128x64
 	lcd.w = sh1106_LCDWIDTH
@@ -91,6 +86,7 @@ func OpenSpi(bus spi_driver.Opener, dc, rst *gpio.Pin) (*LCD, error) {
 	return lcd, nil
 }
 
+// Close closes all devices in LCD
 func (l *LCD) Close() {
 	if l.i2cDev != nil {
 		l.i2cDev.Close()
@@ -98,30 +94,27 @@ func (l *LCD) Close() {
 
 	if l.spiDev != nil {
 		l.spiDev.Close()
-		(*l.pinDC).Close()
 	}
 
-	if l.pinRST != nil {
-		(*l.pinRST).Close()
+	if l.gpioDev != nil {
+		l.gpioDev.Close()
 	}
 }
 
 // Reset does H/W reset if pinRst is not nil
-func (l *LCD) Reset() {
-	if l.pinRST == nil {
-		return
+func (l *LCD) Reset() error {
+	if err := l.gpioDev.SetValue("RST", 1); err != nil {
+		return err
 	}
-	rst := *l.pinRST
-
-	// workaround for bug on initial mode
-	rst.SetMode(gpio.ModeInput)
-	rst.SetMode(gpio.ModeOutput)
-
-	rst.Set()
 	time.Sleep(1 * time.Millisecond)
-	rst.Clear()
+	if err := l.gpioDev.SetValue("RST", 0); err != nil {
+		return err
+	}
 	time.Sleep(10 * time.Millisecond)
-	rst.Set()
+	if err := l.gpioDev.SetValue("RST", 1); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Clear clean internal buffer
@@ -204,7 +197,9 @@ func (l *LCD) sendCmd(c byte) (err error) {
 	if l.i2cDev != nil {
 		err = l.i2cDev.Write([]byte{0x00, c})
 	} else {
-		(*l.pinDC).Clear()
+		if err = l.gpioDev.SetValue("DC", 0); err != nil {
+			return
+		}
 		err = l.spiDev.Tx([]byte{c}, nil)
 	}
 	return
@@ -214,7 +209,9 @@ func (l *LCD) sendData(d []byte) (err error) {
 	if l.i2cDev != nil {
 		err = l.i2cDev.Write(append([]byte{0x40}, d...))
 	} else {
-		(*l.pinDC).Set()
+		if err = l.gpioDev.SetValue("DC", 1); err != nil {
+			return
+		}
 		err = l.spiDev.Tx(d, nil)
 	}
 	return
