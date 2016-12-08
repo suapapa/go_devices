@@ -5,7 +5,6 @@
 package sh1106 // import "github.com/suapapa/go_devices/sh1106"
 
 import (
-	"errors"
 	"time"
 
 	"github.com/davecheney/gpio"
@@ -28,53 +27,53 @@ type LCD struct {
 }
 
 // Open opens a sh1106 LCD in I2C or SPI mode
-func Open(o interface{}, addr int, rst, dc *gpio.Pin) (*LCD, error) {
-	if i2cO, ok := o.(i2c_driver.Opener); ok {
-		return OpenI2C(i2cO, addr, rst)
-	} else if spiO, ok := o.(spi_driver.Opener); ok {
-		return OpenSpi(spiO, dc, rst)
-	}
-	return nil, errors.New("sh1106: unknown driver.Opener")
-}
+// func Open(o interface{}, addr int, rst, dc *gpio.Pin) (*LCD, error) {
+// 	if i2cO, ok := o.(i2c_driver.Opener); ok {
+// 		return OpenI2C(i2cO, addr, rst)
+// 	} else if spiO, ok := o.(spi_driver.Opener); ok {
+// 		return OpenSpi(spiO, dc, rst)
+// 	}
+// 	return nil, errors.New("sh1106: unknown driver.Opener")
+// }
 
 // OpenI2C opens a sh1106 LCD in I2C mode
-func OpenI2C(o i2c_driver.Opener, addr int, rst *gpio.Pin) (*LCD, error) {
-	display := &LCD{}
+func OpenI2C(bus i2c_driver.Opener, addr int, rst *gpio.Pin) (*LCD, error) {
+	lcd := &LCD{}
 
 	if rst != nil {
-		display.pinRST = rst
-		display.Reset()
+		lcd.pinRST = rst
+		lcd.Reset()
 	}
 
-	dev, err := i2c.Open(o, addr)
+	dev, err := i2c.Open(bus, addr)
 	if err != nil {
 		return nil, err
 	}
-	display.i2cDev = dev
+	lcd.i2cDev = dev
 
 	// TODO: support not only 128x64
-	display.w = sh1106_LCDWIDTH
-	display.h = sh1106_LCDHEIGHT
-	display.init()
+	lcd.w = sh1106_LCDWIDTH
+	lcd.h = sh1106_LCDHEIGHT
+	lcd.init()
 
-	return display, nil
+	return lcd, nil
 }
 
 // OpenSpi opens a sh1106 LCD in SPI mode
-func OpenSpi(o spi_driver.Opener, dc, rst *gpio.Pin) (*LCD, error) {
-	display := &LCD{}
+func OpenSpi(bus spi_driver.Opener, dc, rst *gpio.Pin) (*LCD, error) {
+	lcd := &LCD{}
 
 	if rst != nil {
 		display.pinRST = rst
 		display.Reset()
 	}
 
-	dev, err := spi.Open(o)
+	dev, err := spi.Open(bus)
 	if err != nil {
 		return nil, err
 	}
 	dev.SetCSChange(false)
-	display.spiDev = dev
+	lcd.spiDev = dev
 
 	if dc == nil {
 		panic("must set a dc pin")
@@ -82,14 +81,14 @@ func OpenSpi(o spi_driver.Opener, dc, rst *gpio.Pin) (*LCD, error) {
 
 	(*dc).SetMode(gpio.ModeInput)
 	(*dc).SetMode(gpio.ModeOutput)
-	display.pinDC = dc
+	lcd.pinDC = dc
 
 	// TODO: support not only 128x64
-	display.w = sh1106_LCDWIDTH
-	display.h = sh1106_LCDHEIGHT
-	display.init()
+	lcd.w = sh1106_LCDWIDTH
+	lcd.h = sh1106_LCDHEIGHT
+	lcd.init()
 
-	return display, nil
+	return lcd, nil
 }
 
 func (l *LCD) Close() {
