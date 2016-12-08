@@ -5,6 +5,7 @@
 package sh1106 // import "github.com/suapapa/go_devices/sh1106"
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/goiot/exp/gpio"
@@ -36,51 +37,71 @@ type LCD struct {
 // }
 
 // OpenI2C opens a sh1106 LCD in I2C mode
+// gpio device should have "RST" pin for Reset()
+// can pass nil for ctr if ignore Reset()
 func OpenI2C(bus i2c_driver.Opener, ctr gpio_driver.Opener, addr int) (*LCD, error) {
-	lcd := &LCD{}
-
 	i2cDev, err := i2c.Open(bus, addr)
 	if err != nil {
 		return nil, err
 	}
-	lcd.i2cDev = i2cDev
 
-	gpioDev, err := gpio.Open(ctr)
-	if err != nil {
-		return nil, err
+	var gpioDev *gpio.Device
+	if ctr != nil {
+		if gpioDev, err = gpio.Open(ctr); err != nil {
+			return nil, err
+		}
+
+		if err = gpioDev.SetDirection("RST", gpio.Out); err != nil {
+			return nil, err
+		}
 	}
-	lcd.gpioDev = gpioDev
-	// TODO: check RST pin in gpioDev
 
-	// TODO: support not only 128x64
-	lcd.w = sh1106_LCDWIDTH
-	lcd.h = sh1106_LCDHEIGHT
+	lcd := &LCD{
+		i2cDev:  i2cDev,
+		gpioDev: gpioDev,
+		// TODO: support not only 128x64
+		w: sh1106_LCDWIDTH,
+		h: sh1106_LCDHEIGHT,
+	}
+
+	lcd.Reset()
 	lcd.init()
 
 	return lcd, nil
 }
 
 // OpenSpi opens a sh1106 LCD in SPI mode
+// gpio device should have "RST" pin for Reset() and
+// "DC" pin for selecting data/cmd
 func OpenSpi(bus spi_driver.Opener, ctr gpio_driver.Opener) (*LCD, error) {
-	lcd := &LCD{}
-
-	dev, err := spi.Open(bus)
+	spiDev, err := spi.Open(bus)
 	if err != nil {
 		return nil, err
 	}
-	dev.SetCSChange(false)
-	lcd.spiDev = dev
+	spiDev.SetCSChange(false)
 
 	gpioDev, err := gpio.Open(ctr)
 	if err != nil {
 		return nil, err
 	}
-	lcd.gpioDev = gpioDev
-	// TODO: check DC and RST pin in gpioDev
 
-	// TODO: support not only 128x64
-	lcd.w = sh1106_LCDWIDTH
-	lcd.h = sh1106_LCDHEIGHT
+	if err = gpioDev.SetDirection("DC", gpio.Out); err != nil {
+		return nil, err
+	}
+
+	if err = gpioDev.SetDirection("RST", gpio.Out); err != nil {
+		return nil, err
+	}
+
+	lcd := &LCD{
+		spiDev:  spiDev,
+		gpioDev: gpioDev,
+		// TODO: support not only 128x64
+		w: sh1106_LCDWIDTH,
+		h: sh1106_LCDHEIGHT,
+	}
+
+	lcd.Reset()
 	lcd.init()
 
 	return lcd, nil
@@ -103,17 +124,15 @@ func (l *LCD) Close() {
 
 // Reset does H/W reset if pinRst is not nil
 func (l *LCD) Reset() error {
-	if err := l.gpioDev.SetValue("RST", 1); err != nil {
-		return err
+	if l.gpioDev == nil {
+		return fmt.Errorf("sh1106: no gpio device. skip Reset")
 	}
+
+	l.gpioDev.SetValue("RST", 1)
 	time.Sleep(1 * time.Millisecond)
-	if err := l.gpioDev.SetValue("RST", 0); err != nil {
-		return err
-	}
+	l.gpioDev.SetValue("RST", 0)
 	time.Sleep(10 * time.Millisecond)
-	if err := l.gpioDev.SetValue("RST", 1); err != nil {
-		return err
-	}
+	l.gpioDev.SetValue("RST", 1)
 	return nil
 }
 
@@ -146,14 +165,14 @@ func (l *LCD) Display() {
 	height := byte(l.h) >> 3 // 64 >> 3 = 8
 	width := byte(l.w) >> 3  // 132 >> 3 = 16
 
-	mRow := byte(0)
-	mCol := byte(2)
+	row := byte(0)
+	col := byte(2)
 
 	k := 0
 	for i := byte(0); i < height; i++ {
-		l.sendCmd(0xB0 + i + mRow)    //set page address
-		l.sendCmd(mCol & 0xf)         //set lower column address
-		l.sendCmd(0x10 | (mCol >> 4)) //set higher column address
+		l.sendCmd(0xB0 + i + row)    //set page address
+		l.sendCmd(col & 0xf)         //set lower column address
+		l.sendCmd(0x10 | (col >> 4)) //set higher column address
 
 		for j := byte(0); j < 8; j++ {
 			l.sendData(l.buff[k : k+int(width)])
