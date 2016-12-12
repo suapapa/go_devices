@@ -1,18 +1,8 @@
-// Copyright 2015, Homin Lee <homin.lee@suapapa.net>. All rights reserved.
+// Copyright 2015-2016, Homin Lee <homin.lee@suapapa.net>. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package tm1638
-
-// Color is type for LED colors
-type Color byte
-
-// TM1638Color... are color of leds
-const (
-	ColorNone Color = iota
-	ColorGreen
-	ColorRed
-)
 
 // TM1638 represent TM1638 base device
 type TM1638 struct {

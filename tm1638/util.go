@@ -7,8 +7,7 @@ package tm1638
 import "strconv"
 
 func min(v1, v2 byte) byte {
-	min := v1
-	if v2 < min {
+	if v2 < v1 {
 		return v2
 	}
 	return v1

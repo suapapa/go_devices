@@ -92,49 +92,19 @@ func (d tm16xx) setDisplay(val []byte) {
 }
 
 func (d tm16xx) sendCmd(cmd byte) {
-	d.strobe.Clear()
-	d.send(cmd)
-	d.strobe.Set()
+	panic("not implemented")
 }
 
 func (d tm16xx) sendData(addr, data byte) {
-	d.sendCmd(0x44)
-	d.strobe.Clear()
-	d.send(0xC0 | addr)
-	d.send(data)
-	d.strobe.Set()
+	panic("not implemented")
 }
 
 func (d tm16xx) send(data byte) {
-	for i := 0; i < 8; i++ {
-		d.clk.Clear()
-		if data&1 == 0 {
-			d.data.Clear()
-		} else {
-			d.data.Set()
-		}
-		data >>= 1
-		d.clk.Set()
-	}
+	panic("not implemented")
 }
 
 func (d tm16xx) receive() (temp byte) {
-	d.data.SetMode(gpio.ModeInput)
-	d.data.Set() // TODO: is this makes data pin pull up?
-
-	for i := 0; i < 8; i++ {
-		temp >>= 1
-		d.clk.Clear()
-		if d.data.Get() {
-			temp |= 0x80
-		}
-		d.clk.Set()
-	}
-
-	d.data.SetMode(gpio.ModeOutput)
-	d.data.Clear()
-
-	return
+	panic("not implemented")
 }
 
 func (d tm16xx) sendChar(pos byte, data byte, dot bool) {
@@ -146,7 +116,5 @@ func (d tm16xx) sendChar(pos byte, data byte, dot bool) {
 
 // Close closes all open pins
 func (d tm16xx) Close() {
-	d.clk.Close()
-	d.data.Close()
-	d.strobe.Close()
+	panic("not implemented")
 }
