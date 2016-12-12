@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package rpi
+package gpio
 
 const (
 	bcm2835gpFsel0   = 0x0000 // GPIO Function Select 0
