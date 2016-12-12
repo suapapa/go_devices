@@ -4,6 +4,12 @@
 
 package sh1106
 
+// sh1106 module should be connected in following pins
+const (
+	PinDC  = "DC"
+	PinRST = "RST"
+)
+
 const (
 	DefaultI2CAddr = 0x3C // 011110+SA0+RW - 0x3C or 0x3D
 

@@ -37,7 +37,7 @@ type LCD struct {
 // }
 
 // OpenI2C opens a sh1106 LCD in I2C mode
-// gpio device should have "RST" pin for Reset()
+// gpio device should have PinRST pin for Reset()
 // can pass nil for ctr if ignore Reset()
 func OpenI2C(bus i2c_driver.Opener, ctr gpio_driver.Opener, addr int) (*LCD, error) {
 	i2cDev, err := i2c.Open(bus, addr)
@@ -51,7 +51,7 @@ func OpenI2C(bus i2c_driver.Opener, ctr gpio_driver.Opener, addr int) (*LCD, err
 			return nil, err
 		}
 
-		if err = gpioDev.SetDirection("RST", gpio.Out); err != nil {
+		if err = gpioDev.SetDirection(PinRST, gpio.Out); err != nil {
 			return nil, err
 		}
 	}
@@ -71,8 +71,8 @@ func OpenI2C(bus i2c_driver.Opener, ctr gpio_driver.Opener, addr int) (*LCD, err
 }
 
 // OpenSpi opens a sh1106 LCD in SPI mode
-// gpio device should have "RST" pin for Reset() and
-// "DC" pin for selecting data/cmd
+// gpio device should have PinRST pin for Reset() and
+// PinDC pin for selecting data/cmd
 func OpenSpi(bus spi_driver.Opener, ctr gpio_driver.Opener) (*LCD, error) {
 	spiDev, err := spi.Open(bus)
 	if err != nil {
@@ -85,11 +85,11 @@ func OpenSpi(bus spi_driver.Opener, ctr gpio_driver.Opener) (*LCD, error) {
 		return nil, err
 	}
 
-	if err = gpioDev.SetDirection("DC", gpio.Out); err != nil {
+	if err = gpioDev.SetDirection(PinDC, gpio.Out); err != nil {
 		return nil, err
 	}
 
-	if err = gpioDev.SetDirection("RST", gpio.Out); err != nil {
+	if err = gpioDev.SetDirection(PinRST, gpio.Out); err != nil {
 		return nil, err
 	}
 
@@ -128,11 +128,11 @@ func (l *LCD) Reset() error {
 		return fmt.Errorf("sh1106: no gpio device. skip Reset")
 	}
 
-	l.gpioDev.SetValue("RST", 1)
+	l.gpioDev.SetValue(PinRST, 1)
 	time.Sleep(1 * time.Millisecond)
-	l.gpioDev.SetValue("RST", 0)
+	l.gpioDev.SetValue(PinRST, 0)
 	time.Sleep(10 * time.Millisecond)
-	l.gpioDev.SetValue("RST", 1)
+	l.gpioDev.SetValue(PinRST, 1)
 	return nil
 }
 
@@ -216,7 +216,7 @@ func (l *LCD) sendCmd(c byte) (err error) {
 	if l.i2cDev != nil {
 		err = l.i2cDev.Write([]byte{0x00, c})
 	} else {
-		if err = l.gpioDev.SetValue("DC", 0); err != nil {
+		if err = l.gpioDev.SetValue(PinDC, 0); err != nil {
 			return
 		}
 		err = l.spiDev.Tx([]byte{c}, nil)
@@ -228,7 +228,7 @@ func (l *LCD) sendData(d []byte) (err error) {
 	if l.i2cDev != nil {
 		err = l.i2cDev.Write(append([]byte{0x40}, d...))
 	} else {
-		if err = l.gpioDev.SetValue("DC", 1); err != nil {
+		if err = l.gpioDev.SetValue(PinDC, 1); err != nil {
 			return
 		}
 		err = l.spiDev.Tx(d, nil)
