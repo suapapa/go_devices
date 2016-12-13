@@ -7,30 +7,22 @@ package gpio
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"syscall"
 	"unsafe"
 
 	gpio_driver "github.com/goiot/exp/gpio/driver"
 )
 
-// PinMapFunc is a function for convert pin name to number
-type PinMapFunc func(string) (int, error)
-
-var defaultPinMap PinMapFunc = func(n string) (int, error) {
-	return strconv.Atoi(n)
-}
-
-// GpioMem implements github.com/goiot/exp/gpio/driver.Opener
-type GpioMem struct {
+// Mem implements github.com/goiot/exp/gpio/driver.Opener
+type Mem struct {
 	// Map will is used to conver pin name to number
 	// if nil is passed use default function which use strconv.Atoi()
 	PinMap PinMapFunc
 }
 
 // Open returns github.com/goiot/exp/gpio/driver.Conn
-func (m *GpioMem) Open() (gpio_driver.Conn, error) {
-	conn := &gpioMemConn{}
+func (m *Mem) Open() (gpio_driver.Conn, error) {
+	conn := &memConn{}
 	err := conn.mmap()
 	if err != nil {
 		return nil, err
@@ -46,14 +38,14 @@ func (m *GpioMem) Open() (gpio_driver.Conn, error) {
 }
 
 // implements github.com/goiot/exp/gpio/driver.Conn
-type gpioMemConn struct {
+type memConn struct {
 	buf                         []byte
 	gpfsel, gpset, gpclr, gplev []*uint32
 	pinMap                      PinMapFunc
 }
 
 // Value returns the value of the pin. 0 for low values, 1 for high.
-func (c *gpioMemConn) Value(pin string) (int, error) {
+func (c *memConn) Value(pin string) (int, error) {
 	p, err := c.pinMap(pin)
 	if err != nil {
 		return 0, fmt.Errorf("rpi: unknown gpio %s: %v", pin, err)
@@ -68,7 +60,7 @@ func (c *gpioMemConn) Value(pin string) (int, error) {
 }
 
 // SetValue sets the vaule of the pin. 0 for low values, 1 for high.
-func (c *gpioMemConn) SetValue(pin string, v int) error {
+func (c *memConn) SetValue(pin string, v int) error {
 	p, err := c.pinMap(pin)
 	if err != nil {
 		return fmt.Errorf("rpi: unknown gpio %s: %v", pin, err)
@@ -80,7 +72,7 @@ func (c *gpioMemConn) SetValue(pin string, v int) error {
 }
 
 // SetDirection sets the direction of the pin.
-func (c *gpioMemConn) SetDirection(pin string, dir gpio_driver.Direction) error {
+func (c *memConn) SetDirection(pin string, dir gpio_driver.Direction) error {
 	p, err := c.pinMap(pin)
 	if err != nil {
 		return fmt.Errorf("rpi: unknown gpio %s: %v", pin, err)
@@ -109,16 +101,16 @@ func (c *gpioMemConn) SetDirection(pin string, dir gpio_driver.Direction) error 
 
 // Map maps virtual gpio pin name to a physical pin number
 // TODO: gpio device don't use this func now.
-func (c *gpioMemConn) Map(virtual string, physical int) {
+func (c *memConn) Map(virtual string, physical int) {
 	panic("not implemented")
 }
 
 // Close closes the connection and free the underlying resources.
-func (c *gpioMemConn) Close() error {
+func (c *memConn) Close() error {
 	return syscall.Munmap(c.buf)
 }
 
-func (c *gpioMemConn) mmap() error {
+func (c *memConn) mmap() error {
 	f, err := os.OpenFile("/dev/gpiomem", os.O_RDWR|os.O_SYNC, 0)
 	if err != nil {
 		return err
