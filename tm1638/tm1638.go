@@ -107,17 +107,3 @@ func (d TM1638) SetLEDs(leds uint16) {
 		d.SetLED(color, byte(i))
 	}
 }
-
-// GetButton read buttons
-func (d TM1638) GetButton() byte {
-	var keys byte
-
-	d.strobe.Clear()
-	d.send(0x042)
-	for i := 0; i < 4; i++ {
-		keys |= (d.receive() << uint(i))
-	}
-	d.strobe.Set()
-
-	return keys
-}

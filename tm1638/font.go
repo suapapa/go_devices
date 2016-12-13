@@ -4,6 +4,8 @@
 
 package tm1638
 
+import "strconv"
+
 /*
 The bits are displayed by mapping bellow
  -- 0 --
@@ -144,4 +146,12 @@ var fontDefault = []byte{
 	b("00000110"), // (124)	|
 	b("01110000"), // (125)	}
 	b("00000001"), // (126)	~
+}
+
+func b(s string) byte {
+	u, err := strconv.ParseUint(s, 2, 8)
+	if err != nil {
+		panic(err)
+	}
+	return byte(u)
 }

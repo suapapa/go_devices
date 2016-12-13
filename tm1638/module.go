@@ -44,17 +44,32 @@ func (m *Module) Close() {
 	m.dev.Close()
 }
 
-func (m *Module) send(data byte) {
-	for i := 0; i < 8; i++ {
-		m.dev.SetValue("CLK", 0)
-		if data&1 == 0 {
-			m.dev.SetValue("DATA", 0)
-		} else {
-			m.dev.SetValue("DATA", 1)
-		}
-		data >>= 1
-		m.dev.SetValue("CLK", 1)
+// DisplayDigit displays a digit to FND of given position
+func (m *Module) DisplayDigit(pos int, digit byte, dot bool) {
+	m.sendChar(byte(pos), fontNumber[digit&0x0F], dot)
+}
+
+// Clear clears FND in given position
+func (m *Module) Clear(pos int, dot bool) {
+	m.sendChar(byte(pos), 0, dot)
+}
+
+// DisplayError display predefined error sting to FNDs
+func (m *Module) DisplayError() {
+	m.setDisplay(fontErrorData)
+}
+
+func (m *Module) setDisplay(val []byte) {
+	for i, c := range val {
+		m.sendChar(byte(i), c, false)
 	}
+}
+
+func (m *Module) sendChar(pos byte, data byte, dot bool) {
+	if dot {
+		data |= 0x80
+	}
+	m.sendData(pos<<1, data)
 }
 
 func (m *Module) sendCmd(cmd byte) {
@@ -69,6 +84,33 @@ func (m *Module) sendData(addr, data byte) {
 	m.send(0xC0 | addr)
 	m.send(data)
 	m.dev.SetValue("STB", 1)
+}
+
+func (m *Module) send(data byte) {
+	for i := 0; i < 8; i++ {
+		m.dev.SetValue("CLK", 0)
+		if data&1 == 0 {
+			m.dev.SetValue("DATA", 0)
+		} else {
+			m.dev.SetValue("DATA", 1)
+		}
+		data >>= 1
+		m.dev.SetValue("CLK", 1)
+	}
+}
+
+// GetButtons read buttons
+func (m *Module) GetButtons() (keys byte) {
+	m.dev.SetValue(PinSTB, 0)
+	m.send(0x042)
+
+	// TODO: why it repeats 4 time?
+	for i := 0; i < 4; i++ {
+		keys |= (m.receive() << uint(i))
+	}
+	m.dev.SetValue(PinSTB, 1)
+
+	return
 }
 
 func (m *Module) receive() (data byte) {

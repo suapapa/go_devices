@@ -40,7 +40,10 @@ func newTm16xx(data, clk, strobe int,
 	d.clk.Set()
 
 	d.sendCmd(0x40)
-	v := min(7, intensity)
+	v := intensity
+	if v > 7 {
+		v = 7
+	}
 	if activeDisplay {
 		v |= 8
 	}
@@ -58,11 +61,14 @@ func newTm16xx(data, clk, strobe int,
 
 // SetupDisplay initialized the display
 func (d tm16xx) SetupDisplay(active bool, intensity byte) {
-	v := min(7, intensity)
+	v := intensity
+	if v > 7 {
+		v = 7
+	}
 	if active {
 		v |= 8
 	}
-	d.sendCmd(0x80 | v)
+	d.sendCmd(0x80 | intensity)
 
 	d.strobe.Clear()
 	d.clk.Clear()
@@ -72,23 +78,21 @@ func (d tm16xx) SetupDisplay(active bool, intensity byte) {
 
 // DisplayDigit displays a digit
 func (d tm16xx) DisplayDigit(digit byte, pos int, dot bool) {
-	d.sendChar(byte(pos), fontNumber[digit&0x0F], dot)
+	panic("not implemented")
 }
 
 // DisplayError display Error
 func (d tm16xx) DisplayError() {
-	d.setDisplay(fontErrorData)
+	panic("not implemented")
 }
 
 // ClearDigit clear digit in given position
 func (d tm16xx) ClearDigit(pos int, dot bool) {
-	d.sendChar(byte(pos), 0, dot)
+	panic("not implemented")
 }
 
 func (d tm16xx) setDisplay(val []byte) {
-	for i, c := range val {
-		d.sendChar(byte(i), c, false)
-	}
+	panic("not implemented")
 }
 
 func (d tm16xx) sendCmd(cmd byte) {
@@ -108,10 +112,7 @@ func (d tm16xx) receive() (temp byte) {
 }
 
 func (d tm16xx) sendChar(pos byte, data byte, dot bool) {
-	if dot {
-		data |= 0x80
-	}
-	d.sendData(pos<<1, data)
+	panic("not implemented")
 }
 
 // Close closes all open pins
