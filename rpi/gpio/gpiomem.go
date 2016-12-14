@@ -15,9 +15,8 @@ import (
 
 // Mem implements github.com/goiot/exp/gpio/driver.Opener
 type Mem struct {
-	// Map will is used to conver pin name to number
-	// if nil is passed use default function which use strconv.Atoi()
-	PinMap PinMapFunc
+	// PinMap will is used to conver pin name to number
+	PinMap map[string]int
 }
 
 // Open returns github.com/goiot/exp/gpio/driver.Conn
@@ -28,11 +27,7 @@ func (m *Mem) Open() (gpio_driver.Conn, error) {
 		return nil, err
 	}
 
-	if m.PinMap == nil {
-		conn.pinMap = defaultPinMap
-	} else {
-		conn.pinMap = m.PinMap
-	}
+	conn.pinMap = m.PinMap
 
 	return conn, nil
 }
@@ -41,14 +36,14 @@ func (m *Mem) Open() (gpio_driver.Conn, error) {
 type memConn struct {
 	buf                         []byte
 	gpfsel, gpset, gpclr, gplev []*uint32
-	pinMap                      PinMapFunc
+	pinMap                      map[string]int
 }
 
 // Value returns the value of the pin. 0 for low values, 1 for high.
 func (c *memConn) Value(pin string) (int, error) {
-	p, err := c.pinMap(pin)
-	if err != nil {
-		return 0, fmt.Errorf("rpi: unknown gpio %s: %v", pin, err)
+	p, ok := c.pinMap[pin]
+	if !ok {
+		return 0, fmt.Errorf("gpio: unknown gpio, %s", pin)
 	}
 
 	offset, shift := p/32, byte(p%32)
@@ -61,9 +56,9 @@ func (c *memConn) Value(pin string) (int, error) {
 
 // SetValue sets the vaule of the pin. 0 for low values, 1 for high.
 func (c *memConn) SetValue(pin string, v int) error {
-	p, err := c.pinMap(pin)
-	if err != nil {
-		return fmt.Errorf("rpi: unknown gpio %s: %v", pin, err)
+	p, ok := c.pinMap[pin]
+	if !ok {
+		return fmt.Errorf("gpio: unknown gpio, %s", pin)
 	}
 
 	offset, shift := p/32, byte(p%32)
@@ -73,9 +68,9 @@ func (c *memConn) SetValue(pin string, v int) error {
 
 // SetDirection sets the direction of the pin.
 func (c *memConn) SetDirection(pin string, dir gpio_driver.Direction) error {
-	p, err := c.pinMap(pin)
-	if err != nil {
-		return fmt.Errorf("rpi: unknown gpio %s: %v", pin, err)
+	p, ok := c.pinMap[pin]
+	if !ok {
+		return fmt.Errorf("gpio: unknown gpio, %s", pin)
 	}
 
 	offset, shift := p/10, uint32(p%10)*3
@@ -100,9 +95,8 @@ func (c *memConn) SetDirection(pin string, dir gpio_driver.Direction) error {
 }
 
 // Map maps virtual gpio pin name to a physical pin number
-// TODO: gpio device don't use this func now.
 func (c *memConn) Map(virtual string, physical int) {
-	panic("not implemented")
+	c.pinMap[virtual] = physical
 }
 
 // Close closes the connection and free the underlying resources.
