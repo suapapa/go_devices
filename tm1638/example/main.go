@@ -9,42 +9,55 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/suapapa/go_tm1638"
+	"github.com/suapapa/go_devices/rpi/gpio"
+	"github.com/suapapa/go_devices/tm1638"
+)
+
+var (
+	exitC = make(chan struct{})
 )
 
 func main() {
-	d, err := tm1638.NewTM1638(18, 23, 24)
+	m, err := tm1638.Open(
+		&gpio.Mem{
+			PinMap: map[string]int{
+				tm1638.PinCLK:  18,
+				tm1638.PinDATA: 23,
+				tm1638.PinSTB:  24,
+			},
+		},
+	)
 	if err != nil {
 		panic(err)
 	}
-
-	d.SetLEDs(0x0000)
-	time.Sleep(1 * time.Second)
-	d.DisplayError()
-	time.Sleep(1 * time.Second)
-	d.DisplayHexNumber(0xff4500, 0x0F, true)
-	time.Sleep(1 * time.Second)
-	d.DisplayDecNumber(uint64(time.Now().UnixNano()%100000000), 0, true)
-	time.Sleep(1 * time.Second)
-	d.DisplaySignedDecNumber(-2345678, 0, false)
-	time.Sleep(1 * time.Second)
-	d.DisplayBinNumber(0x45, 0xF0)
-	time.Sleep(1 * time.Second)
-	d.SetLEDs(0xF00F)
+	defer m.Close()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
-		for _ = range c {
-			d.Close()
-			os.Exit(0)
+		<-c
+		exitC <- struct{}{}
+	}()
+
+	go func() {
+		for {
+			keys := m.GetButtons()
+
+			var str string
+			for i := 0; i < 8; i++ {
+				if keys&(1<<byte(i)) == 0 {
+					str += "0"
+					m.SetLed(i, tm1638.Off)
+				} else {
+					str += "1"
+					m.SetLed(i, tm1638.Red)
+				}
+			}
+			m.SetString(str)
+
+			time.Sleep(10 * time.Millisecond)
 		}
 	}()
 
-	for {
-		time.Sleep(10 * time.Millisecond)
-		keys := d.GetButton()
-		d.DisplayBinNumber(keys, 0x00)
-	}
-
+	<-exitC
 }

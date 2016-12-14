@@ -14,7 +14,7 @@ const (
 // Color is type for LED colors
 type Color byte
 
-// TM1638Color... are color of leds
+// Available colors for leds
 const (
 	Off Color = iota
 	Green

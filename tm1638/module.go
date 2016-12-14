@@ -63,61 +63,24 @@ func (m *Module) SetFND(pos int, data byte) {
 	m.sendData(byte(pos)<<1, data)
 }
 
-// SetString sets FND to given str
-func (m *Module) SetString(str string) {
-	i := 0
-	for _, r := range str {
-		if d, ok := font[r]; ok {
-			m.SetFND(i, d)
-		} else {
-			m.SetFND(i, 0x00)
-		}
-		i++
+// SetChar sets FND in given position to given character
+func (m *Module) SetChar(pos int, c rune, dot bool) {
+	data, ok := font[c]
+	if !ok {
+		data = 0x00
 	}
-}
-
-// Clear clears FND in given position
-func (m *Module) Clear(pos int, dot bool) {
-	m.sendChar(pos, 0, dot)
-}
-
-func (m *Module) setDisplay(val []byte) {
-	for i, c := range val {
-		m.sendChar(i, c, false)
-	}
-}
-
-func (m *Module) sendChar(pos int, data byte, dot bool) {
 	if dot {
 		data |= 0x80
 	}
 	m.sendData(byte(pos)<<1, data)
 }
 
-func (m *Module) sendCmd(cmd byte) {
-	m.dev.SetValue("STB", 0)
-	m.send(cmd)
-	m.dev.SetValue("STB", 1)
-}
-
-func (m *Module) sendData(addr, data byte) {
-	m.sendCmd(0x44)
-	m.dev.SetValue("STB", 0)
-	m.send(0xC0 | addr)
-	m.send(data)
-	m.dev.SetValue("STB", 1)
-}
-
-func (m *Module) send(data byte) {
-	for i := 0; i < 8; i++ {
-		m.dev.SetValue("CLK", 0)
-		if data&1 == 0 {
-			m.dev.SetValue("DATA", 0)
-		} else {
-			m.dev.SetValue("DATA", 1)
-		}
-		data >>= 1
-		m.dev.SetValue("CLK", 1)
+// SetString sets FND to given str
+func (m *Module) SetString(str string) {
+	i := 0
+	for _, r := range str {
+		m.SetChar(i, r, false)
+		i++
 	}
 }
 
@@ -133,6 +96,33 @@ func (m *Module) GetButtons() (keys byte) {
 	m.dev.SetValue(PinSTB, 1)
 
 	return
+}
+
+func (m *Module) sendData(addr, data byte) {
+	m.sendCmd(0x44)
+	m.dev.SetValue(PinSTB, 0)
+	m.send(0xC0 | addr)
+	m.send(data)
+	m.dev.SetValue(PinSTB, 1)
+}
+
+func (m *Module) sendCmd(cmd byte) {
+	m.dev.SetValue(PinSTB, 0)
+	m.send(cmd)
+	m.dev.SetValue(PinSTB, 1)
+}
+
+func (m *Module) send(data byte) {
+	for i := 0; i < 8; i++ {
+		m.dev.SetValue(PinCLK, 0)
+		if data&1 == 0 {
+			m.dev.SetValue(PinDATA, 0)
+		} else {
+			m.dev.SetValue(PinDATA, 1)
+		}
+		data >>= 1
+		m.dev.SetValue(PinCLK, 1)
+	}
 }
 
 func (m *Module) receive() (data byte) {
