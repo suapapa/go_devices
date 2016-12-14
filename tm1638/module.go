@@ -9,6 +9,7 @@ import (
 	gpio_driver "github.com/goiot/exp/gpio/driver"
 )
 
+// Module represents tm1638 based module
 type Module struct {
 	dev *gpio.Device
 }
@@ -44,32 +45,53 @@ func (m *Module) Close() {
 	m.dev.Close()
 }
 
-// DisplayDigit displays a digit to FND of given position
-func (m *Module) DisplayDigit(pos int, digit byte, dot bool) {
-	m.sendChar(byte(pos), fontNumber[digit&0x0F], dot)
+// SetLed sets led in pos to given color
+func (m *Module) SetLed(pos int, led Color) {
+	m.sendData(byte(pos<<1)+1, byte(led))
+}
+
+// SetFND sets FND in pos to data.
+// The bits in the data are displayed by mapping bellow
+//  -- 0 --
+// |       |
+// 5       1
+//  -- 6 --
+// 4       2
+// |       |
+//  -- 3 --  .7
+func (m *Module) SetFND(pos int, data byte) {
+	m.sendData(byte(pos)<<1, data)
+}
+
+// SetString sets FND to given str
+func (m *Module) SetString(str string) {
+	i := 0
+	for _, r := range str {
+		if d, ok := font[r]; ok {
+			m.SetFND(i, d)
+		} else {
+			m.SetFND(i, 0x00)
+		}
+		i++
+	}
 }
 
 // Clear clears FND in given position
 func (m *Module) Clear(pos int, dot bool) {
-	m.sendChar(byte(pos), 0, dot)
-}
-
-// DisplayError display predefined error sting to FNDs
-func (m *Module) DisplayError() {
-	m.setDisplay(fontErrorData)
+	m.sendChar(pos, 0, dot)
 }
 
 func (m *Module) setDisplay(val []byte) {
 	for i, c := range val {
-		m.sendChar(byte(i), c, false)
+		m.sendChar(i, c, false)
 	}
 }
 
-func (m *Module) sendChar(pos byte, data byte, dot bool) {
+func (m *Module) sendChar(pos int, data byte, dot bool) {
 	if dot {
 		data |= 0x80
 	}
-	m.sendData(pos<<1, data)
+	m.sendData(byte(pos)<<1, data)
 }
 
 func (m *Module) sendCmd(cmd byte) {

@@ -16,7 +16,8 @@ type Color byte
 
 // TM1638Color... are color of leds
 const (
-	ColorNone Color = iota
-	ColorGreen
-	ColorRed
+	Off Color = iota
+	Green
+	Red
+	Yello = Green | Red
 )
