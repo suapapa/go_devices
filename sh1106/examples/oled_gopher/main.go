@@ -1,12 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/png"
 	"os"
 
-	"github.com/suapapa/go_devices/rpi"
+	rpi_gpio "github.com/suapapa/go_devices/rpi/gpio"
 	"github.com/suapapa/go_devices/sh1106"
 	"golang.org/x/exp/io/i2c"
 )
@@ -14,16 +13,12 @@ import (
 func main() {
 	l, err := sh1106.OpenI2C(
 		&i2c.Devfs{Dev: "/dev/i2c-1"},
-		&rpi.GpioMem{
-			PinMap: func(n string) (int, error) {
-				switch n {
-				case "RST":
-					return 14, nil
-				}
-				return 0, fmt.Errorf("unknown gpio %s", n)
+		&rpi_gpio.Mem{
+			PinMap: map[string]int{
+				sh1106.PinRST: 14,
 			},
 		},
-		0x3C,
+		sh1106.DefaultI2CAddr, // 0x3C
 	)
 	if err != nil {
 		panic(err)
