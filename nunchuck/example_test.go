@@ -5,8 +5,6 @@
 package nunchuck_test
 
 import (
-	"fmt"
-
 	"github.com/suapapa/go_devices/nunchuck"
 	"golang.org/x/exp/io/i2c"
 )
@@ -17,7 +15,4 @@ func ExampleOpen() {
 		panic(err)
 	}
 	defer c.Close()
-
-	c.Update()
-	fmt.Println(c)
 }
