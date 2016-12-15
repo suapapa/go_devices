@@ -1,42 +1,34 @@
+// Copyright 2016, Homin Lee <homin.lee@suapapa.net>. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package ili9340
 
 import (
 	"image"
 	"image/color"
-	"log"
 )
 
-func rgb565(c color.Color) uint16 {
+// rgb565 converts color.Color to 2 bytes length []byte
+func rgb565(c color.Color) []byte {
 	r, g, b, _ := c.RGBA()
 	r >>= 8
 	g >>= 8
 	b >>= 8
-	rgb := (uint16(r&0xF8) << 8) | uint16((g&0xFC)<<3) | uint16(b>>3)
-	log.Printf("rgb: 0x%06x\n", rgb)
-	return rgb
+	ret := make([]byte, 2)
+	ret[0] = byte(r&0xF8) | byte((g&0xFC)>>5)
+	ret[1] = byte((g&0xFC)<<3) | byte(b>>3)
+	return ret
 }
 
-func color2rgb565(c color.Color) (h, l uint8) {
-	r, g, b, _ := c.RGBA()
-	r >>= 8
-	g >>= 8
-	b >>= 8
-	h = uint8(r&0xF8) | uint8((g&0xFC)>>5)
-	l = uint8((g&0xFC)<<3) | uint8(b>>3)
-	return h, l
-}
-
-func img2rbg565(img image.Image) []uint8 {
+// rgb565Img converts image.Image to 2*w*h bytes lenght of []byte
+func rgb565Img(img image.Image) []byte {
 	b := img.Bounds()
 	w, h := b.Dx(), b.Dy()
-	buff := make([]uint8, w*h*2)
-	i := 0
+	buff := make([]byte, 0, w*h*2)
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			h, l := color2rgb565(img.At(x, y))
-			buff[i] = h
-			buff[i+1] = l
-			i += 2
+			buff = append(buff, rgb565(img.At(x, y))...)
 		}
 	}
 	return buff

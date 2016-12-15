@@ -1,68 +1,80 @@
+// Copyright 2016, Homin Lee <homin.lee@suapapa.net>. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package ili9340
 
+// ili9340 lcd should be connected in following pins
 const (
-	ili9340_TFTWIDTH  = 240
-	ili9340_TFTHEIGHT = 320
+	PinDC  = "DC"
+	PinRST = "RST"
+)
 
-	ili9340_NOP     = 0x00
-	ili9340_SWRESET = 0x01
-	ili9340_RDDID   = 0x04
-	ili9340_RDDST   = 0x09
+const (
+	width  = 240
+	height = 320
+)
 
-	ili9340_SLPIN  = 0x10
-	ili9340_SLPOUT = 0x11
-	ili9340_PTLON  = 0x12
-	ili9340_NORON  = 0x13
+const (
+	regNOP     = 0x00
+	regSWRESET = 0x01
+	regRDDID   = 0x04
+	regRDDST   = 0x09
 
-	ili9340_RDMODE     = 0x0A
-	ili9340_RDMADCTL   = 0x0B
-	ili9340_RDPIXFMT   = 0x0C
-	ili9340_RDIMGFMT   = 0x0A
-	ili9340_RDSELFDIAG = 0x0F
+	regSLPIN  = 0x10
+	regSLPOUT = 0x11
+	regPTLON  = 0x12
+	regNORON  = 0x13
 
-	ili9340_INVOFF   = 0x20
-	ili9340_INVON    = 0x21
-	ili9340_GAMMASET = 0x26
-	ili9340_DISPOFF  = 0x28
-	ili9340_DISPON   = 0x29
+	regRDMODE     = 0x0A
+	regRDMADCTL   = 0x0B
+	regRDPIXFMT   = 0x0C
+	regRDIMGFMT   = 0x0A
+	regRDSELFDIAG = 0x0F
 
-	ili9340_CASET = 0x2A
-	ili9340_PASET = 0x2B
-	ili9340_RAMWR = 0x2C
-	ili9340_RAMRD = 0x2E
+	regINVOFF   = 0x20
+	regINVON    = 0x21
+	regGAMMASET = 0x26
+	regDISPOFF  = 0x28
+	regDISPON   = 0x29
 
-	ili9340_PTLAR  = 0x30
-	ili9340_MADCTL = 0x36
+	regCASET = 0x2A
+	regPASET = 0x2B
+	regRAMWR = 0x2C
+	regRAMRD = 0x2E
 
-	ili9340_MADCTL_MY  = 0x80
-	ili9340_MADCTL_MX  = 0x40
-	ili9340_MADCTL_MV  = 0x20
-	ili9340_MADCTL_ML  = 0x10
-	ili9340_MADCTL_RGB = 0x00
-	ili9340_MADCTL_BGR = 0x08
-	ili9340_MADCTL_MH  = 0x04
+	regPTLAR  = 0x30
+	regMADCTL = 0x36
 
-	ili9340_PIXFMT = 0x3A
+	regMADCTLvalMY  = 0x80
+	regMADCTLvalMX  = 0x40
+	regMADCTLvalMV  = 0x20
+	regMADCTLvalML  = 0x10
+	regMADCTLvalRGB = 0x00
+	regMADCTLvalBGR = 0x08
+	regMADCTLvalMH  = 0x04
 
-	ili9340_FRMCTR1 = 0xB1
-	ili9340_FRMCTR2 = 0xB2
-	ili9340_FRMCTR3 = 0xB3
-	ili9340_INVCTR  = 0xB4
-	ili9340_DFUNCTR = 0xB6
+	regPIXFMT = 0x3A
 
-	ili9340_PWCTR1 = 0xC0
-	ili9340_PWCTR2 = 0xC1
-	ili9340_PWCTR3 = 0xC2
-	ili9340_PWCTR4 = 0xC3
-	ili9340_PWCTR5 = 0xC4
-	ili9340_VMCTR1 = 0xC5
-	ili9340_VMCTR2 = 0xC7
+	regFRMCTR1 = 0xB1
+	regFRMCTR2 = 0xB2
+	regFRMCTR3 = 0xB3
+	regINVCTR  = 0xB4
+	regDFUNCTR = 0xB6
 
-	ili9340_RDID1 = 0xDA
-	ili9340_RDID2 = 0xDB
-	ili9340_RDID3 = 0xDC
-	ili9340_RDID4 = 0xDD
+	regPWCTR1 = 0xC0
+	regPWCTR2 = 0xC1
+	regPWCTR3 = 0xC2
+	regPWCTR4 = 0xC3
+	regPWCTR5 = 0xC4
+	regVMCTR1 = 0xC5
+	regVMCTR2 = 0xC7
 
-	ili9340_GMCTRP1 = 0xE0
-	ili9340_GMCTRN1 = 0xE1
+	regRDID1 = 0xDA
+	regRDID2 = 0xDB
+	regRDID3 = 0xDC
+	regRDID4 = 0xDD
+
+	regGMCTRP1 = 0xE0
+	regGMCTRN1 = 0xE1
 )

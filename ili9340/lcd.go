@@ -1,137 +1,142 @@
+// Copyright 2016, Homin Lee <homin.lee@suapapa.net>. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package ili9340
 
 import (
+	"bytes"
+	"fmt"
 	"image"
 	"image/color"
-	"log"
 	"time"
 
+	"github.com/goiot/exp/gpio"
+	gpio_driver "github.com/goiot/exp/gpio/driver"
 	"golang.org/x/exp/io/spi"
-	"golang.org/x/exp/io/spi/driver"
-
-	"github.com/davecheney/gpio"
+	spi_driver "golang.org/x/exp/io/spi/driver"
 )
 
 // LCD reperesents TFT-LCD panel which using ili9340 controller
 type LCD struct {
-	dev  *spi.Device
-	dc   gpio.Pin
-	w, h int
+	spiDev  *spi.Device
+	gpioDev *gpio.Device
+
+	W, H int
 }
 
-// Open connets to the passed driver and sets things up
-func Open(o driver.Opener, dc gpio.Pin) (*LCD, error) {
-	/*
-		dev, err := spi.Open(&spi.Devfs{
-			Dev:      "/dev/spidev0.1",
-			Mode:     spi.Mode3,
-			MaxSpeed: 500000,
-		})
-	*/
-	dc.SetMode(gpio.ModeInput)
-	dc.SetMode(gpio.ModeOutput)
-
-	log.Println("dc:", dc.Mode(), dc.Get())
-
-	device, err := spi.Open(o)
+// Open connets LCD to passed SPI bus and GPIO controls
+// GPIO device should have "DC" and "RST"
+func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*LCD, error) {
+	spiDev, err := spi.Open(bus)
 	if err != nil {
 		return nil, err
 	}
-	device.SetCSChange(false)
+	spiDev.SetCSChange(false)
 
-	lcd := &LCD{
-		dev: device,
-		dc:  dc,
+	gpioDev, err := gpio.Open(ctr)
+	if err != nil {
+		spiDev.Close()
+		return nil, err
 	}
 
-	lcd.reset()
+	if err = gpioDev.SetDirection(PinDC, gpio.Out); err != nil {
+		spiDev.Close()
+		return nil, err
+	}
+
+	if err = gpioDev.SetDirection(PinRST, gpio.Out); err != nil {
+		// RST pin could be skipped when no reset is requiered
+		// spiDev.Close()
+		// return nil, err
+	}
+
+	lcd := &LCD{
+		spiDev:  spiDev,
+		gpioDev: gpioDev,
+	}
+
+	lcd.Reset()
 	lcd.init()
 	lcd.Rotate(0)
 
 	return lcd, nil
 }
 
+// Close takes care of cleaning things up.
+func (l *LCD) Close() {
+	l.spiDev.Close()
+	l.gpioDev.Close()
+}
+
+// Reset resets LCD by using PinRST
+func (l *LCD) Reset() {
+	if err := l.gpioDev.SetDirection(PinRST, gpio.Out); err != nil {
+		return
+	}
+
+	l.gpioDev.SetValue(PinRST, 1)
+	time.Sleep(5 * time.Millisecond)
+	l.gpioDev.SetValue(PinRST, 0)
+	time.Sleep(20 * time.Millisecond)
+	l.gpioDev.SetValue(PinRST, 1)
+	time.Sleep(120 * time.Millisecond)
+}
+
 // DrawPixel sets a pixel at a position x, y.
 func (l *LCD) DrawPixel(x, y int, c color.Color) {
 	l.setWinAddr(x, y, x, y)
-	l.pushColor(rgb565(c))
+	l.writeData(rgb565(c))
 }
 
-// DrawRect draw a rect at x,y
+// DrawRect draws a rect at x, y in given w, h
 func (l *LCD) DrawRect(x, y, w, h int, c color.Color) {
-	rgb := rgb565(c)
 	l.setWinAddr(x, y, x+w-1, y+h-1)
-	for i := 0; i < w*h; i++ {
-		l.pushColor(rgb)
-	}
+	l.writeData(bytes.Repeat(rgb565(c), w*h))
 }
 
-// SetImage draws an image on the display starting from x, y.
-func (l *LCD) SetImage(x, y int, img image.Image) {
-	imgW, imgH := img.Bounds().Dx(), img.Bounds().Dy()
-	endX, endY := x+imgW, y+imgH
+// DrawImage draws an image on the display starting from x, y.
+func (l *LCD) DrawImage(x, y int, img image.Image) {
+	w, h := img.Bounds().Dx(), img.Bounds().Dy()
 
-	if endX >= l.w {
-		endX = l.w
-	}
-	if endY >= l.h {
-		endY = l.h
-	}
-
-	var imgX, imgY int
-	for i := x; i < endX; i++ {
-		imgY = 0
-		for j := y; j < endY; j++ {
-			l.DrawPixel(i, j, img.At(imgX, imgY))
-			imgY++
-		}
-		imgX++
-	}
-}
-
-// Width returns the display width.
-func (l *LCD) Width() int { return l.w }
-
-// Height returns the display height.
-func (l *LCD) Height() int { return l.h }
-
-// Close takes care of cleaning things up.
-func (l *LCD) Close() {
-	l.dev.Close()
-	l.dc.Close()
+	l.setWinAddr(x, y, x+w-1, y+h-1)
+	// TODO: crop image if it oversizes LCD
+	l.writeData(rgb565Img(img))
 }
 
 // Rotate rotates display
-func (l *LCD) Rotate(r int) {
+func (l *LCD) Rotate(r int) error {
 	var val byte
+	var w, h int
 	switch r {
 	case 270:
-		val = ili9340_MADCTL_MV
-		l.w = ili9340_TFTHEIGHT
-		l.h = ili9340_TFTWIDTH
+		val = regMADCTLvalMV
+		w, h = height, width
 	case 180:
-		val = ili9340_MADCTL_MY
-		l.w = ili9340_TFTWIDTH
-		l.h = ili9340_TFTHEIGHT
+		val = regMADCTLvalMY
+		w, h = width, height
 	case 90:
-		val = ili9340_MADCTL_MV | ili9340_MADCTL_MY | ili9340_MADCTL_MX
-		l.w = ili9340_TFTHEIGHT
-		l.h = ili9340_TFTWIDTH
+		val = regMADCTLvalMV | regMADCTLvalMY | regMADCTLvalMX
+		w, h = height, width
+	case 0:
+		val = regMADCTLvalMX
+		w, h = width, height
 	default:
-		val = ili9340_MADCTL_MX
-		l.w = ili9340_TFTWIDTH
-		l.h = ili9340_TFTHEIGHT
+		return fmt.Errorf("ili9340: unsupported rotation degree, %d", r)
 	}
 
-	l.writeReg(0x36, val|ili9340_MADCTL_BGR)
+	l.W, l.H = w, h
+	l.writeReg(regMADCTL, val|regMADCTLvalBGR)
+
+	return nil
 }
 
 // Invert invert colors on the display
 func (l *LCD) Invert(on bool) {
 	if on {
-		l.writeReg(ili9340_INVON)
+		l.writeReg(regINVON)
 	} else {
-		l.writeReg(ili9340_INVOFF)
+		l.writeReg(regINVOFF)
 	}
 }
 
@@ -192,16 +197,8 @@ func (l *LCD) init() {
 	l.writeReg(0x29)
 }
 
-func (l *LCD) reset() {
-	// l.rst.Set()
-	// time.Sleep(5 * time.Millisecond)
-	// l.rst.Clear()
-	// time.Sleep(20 * time.Millisecond)
-	// l.rst.Set()
-	// time.Sleep(120 * time.Millisecond)
-}
-
-func (l *LCD) setWinAddr(xs, ys, xe, ye int) {
+// setWinAddr set windows on LCD and return data length in the window
+func (l *LCD) setWinAddr(xs, ys, xe, ye int) int {
 	/* Column address */
 	l.writeReg(0x2A,
 		uint8(xs>>8), uint8(xs&0xFF),
@@ -216,27 +213,20 @@ func (l *LCD) setWinAddr(xs, ys, xe, ye int) {
 
 	/* Memory write */
 	l.writeReg(0x2C)
+
+	return ((xe-xs)*(ye-ys) + 1) * 2
 }
 
-func (l *LCD) pushColor(c uint16) {
-	l.dc.Set()
-	l.dev.Tx([]uint8{uint8(c >> 8), uint8(c & 0xff)}, nil)
+func (l *LCD) writeData(data []byte) {
+	l.gpioDev.SetValue(PinDC, 1)
+	l.spiDev.Tx(data, nil)
 }
 
 func (l *LCD) writeReg(vs ...uint8) {
-	if vs == nil || len(vs) == 0 {
-		return
-	}
-
-	l.dc.Clear()
-	// time.Sleep(100 * time.Millisecond)
-	log.Println("write command:", l.dc.Get(), vs[:1])
-	l.dev.Tx(vs[:1], nil)
+	l.gpioDev.SetValue(PinDC, 0)
+	l.spiDev.Tx(vs[:1], nil)
 
 	if len(vs) > 1 {
-		l.dc.Set()
-		// time.Sleep(10 * time.Millisecond)
-		log.Println("write data:", l.dc.Get(), vs[1:])
-		l.dev.Tx(vs[1:], nil)
+		l.writeData(vs[1:])
 	}
 }
