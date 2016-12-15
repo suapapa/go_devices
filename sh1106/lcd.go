@@ -48,10 +48,12 @@ func OpenI2C(bus i2c_driver.Opener, ctr gpio_driver.Opener, addr int) (*LCD, err
 	var gpioDev *gpio.Device
 	if ctr != nil {
 		if gpioDev, err = gpio.Open(ctr); err != nil {
+			i2cDev.Close()
 			return nil, err
 		}
 
 		if err = gpioDev.SetDirection(PinRST, gpio.Out); err != nil {
+			i2cDev.Close()
 			return nil, err
 		}
 	}
