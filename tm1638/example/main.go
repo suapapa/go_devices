@@ -6,6 +6,9 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/suapapa/go_devices/rpi/gpio"
 	"github.com/suapapa/go_devices/tm1638"
@@ -17,7 +20,7 @@ var (
 
 func main() {
 	m, err := tm1638.Open(
-		&gpio.Mem{
+		&gpio.Sysfs{
 			PinMap: map[string]int{
 				tm1638.PinCLK:  17,
 				tm1638.PinDATA: 27,
@@ -32,42 +35,43 @@ func main() {
 
 	for i := 0; i < 8; i++ {
 		if i%2 == 0 {
-			m.SetLed(i, tm1638.Green)
-		} else {
 			m.SetLed(i, tm1638.Red)
+		} else {
+			m.SetLed(i, tm1638.Green)
 		}
 	}
 
-	log.Println("say hello")
-	m.SetString(" Hello! ")
+	m.SetString(" HELLO! ")
 
-	// c := make(chan os.Signal, 1)
-	// signal.Notify(c, os.Interrupt)
-	// go func() {
-	// 	<-c
-	// 	exitC <- struct{}{}
-	// }()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		exitC <- struct{}{}
+	}()
 
-	// log.Println("Ctrl-C for exit")
-	// go func() {
-	// 	for {
-	// 		keys := m.GetButtons()
+	time.Sleep(time.Second)
 
-	// 		var str string
-	// 		for i := 0; i < 8; i++ {
-	// 			if keys&(1<<byte(i)) == 0 {
-	// 				str += "0"
-	// 				m.SetLed(i, tm1638.Off)
-	// 			} else {
-	// 				str += "1"
-	// 				m.SetLed(i, tm1638.Red)
-	// 			}
-	// 		}
-	// 		m.SetString(str)
+	log.Println("Ctrl-C for exit")
+	go func() {
+		for {
+			keys := m.GetButtons()
 
-	// 		time.Sleep(10 * time.Millisecond)
-	// 	}
-	// }()
+			var str string
+			for i := 0; i < 8; i++ {
+				if keys&(1<<byte(i)) == 0 {
+					str += "0"
+					m.SetLed(i, tm1638.Off)
+				} else {
+					str += "1"
+					m.SetLed(i, tm1638.Red)
+				}
+			}
+			m.SetString(str)
 
-	// <-exitC
+			time.Sleep(10 * time.Millisecond)
+		}
+	}()
+
+	<-exitC
 }

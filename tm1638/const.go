@@ -19,5 +19,4 @@ const (
 	Off Color = iota
 	Green
 	Red
-	Yello = Green | Red
 )
