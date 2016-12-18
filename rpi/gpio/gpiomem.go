@@ -62,7 +62,11 @@ func (c *memConn) SetValue(pin string, v int) error {
 	}
 
 	offset, shift := p/32, byte(p%32)
-	*c.gpset[offset] = (1 << shift)
+	if v == 1 {
+		*c.gpset[offset] = (1 << shift)
+	} else {
+		*c.gpclr[offset] = (1 << shift)
+	}
 	return nil
 }
 
