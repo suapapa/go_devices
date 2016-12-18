@@ -6,8 +6,14 @@ package gpio
 
 import gpio_driver "github.com/goiot/exp/gpio/driver"
 
-// assert that rpigpio.pin implements gpio_driver.Opener
+// assert that &Mem implements gpio_driver.Opener
 var _ gpio_driver.Opener = &Mem{}
 
-// assert that rpigpio.pin implements gpio_driver.Conn
+// assert that &memConn implements gpio_driver.Conn
 var _ gpio_driver.Conn = &memConn{}
+
+// assert that &Sysfs implements gpio_driver.Opener
+var _ gpio_driver.Opener = &Sysfs{}
+
+// assert that &sysfsConn implements gpio_driver.Conn
+var _ gpio_driver.Conn = &sysfsConn{}
