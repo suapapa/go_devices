@@ -22,19 +22,22 @@ func main() {
 	}
 
 	log.Println("start blinking...")
-	tC := time.After(10 * time.Second)
+	tC := time.After(1 * time.Second)
+	cnt := 0
 loop:
 	for {
 		select {
 		case <-tC:
 			break loop
 		default:
-			dev.SetValue("BCM16", 1)
-			time.Sleep(time.Second)
-			dev.SetValue("BCM16", 0)
-			time.Sleep(time.Second)
+			if cnt%2 == 0 {
+				dev.SetValue("BCM16", 1)
+			} else {
+				dev.SetValue("BCM16", 0)
 
+			}
+			cnt++
 		}
 	}
-	log.Println("bye bye~")
+	log.Println("bye bye~", cnt)
 }
