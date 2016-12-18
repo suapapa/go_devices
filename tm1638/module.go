@@ -25,19 +25,16 @@ func Open(d gpio_driver.Opener) (*Module, error) {
 		return nil, err
 	}
 
-	if err = gpioDev.SetDirection(PinDATA, gpio.Out); err != nil {
-		return nil, err
+	m := &Module{
+		dev: gpioDev,
 	}
-	if err = gpioDev.SetDirection(PinCLK, gpio.Out); err != nil {
-		return nil, err
-	}
-	if err = gpioDev.SetDirection(PinSTB, gpio.Out); err != nil {
+
+	if err := m.init(); err != nil {
+		m.Close()
 		return nil, err
 	}
 
-	return &Module{
-		dev: gpioDev,
-	}, nil
+	return m, nil
 }
 
 // Close closes tm1638 module
@@ -96,6 +93,34 @@ func (m *Module) GetButtons() (keys byte) {
 	m.dev.SetValue(PinSTB, 1)
 
 	return
+}
+
+func (m *Module) init() error {
+	if err := m.dev.SetDirection(PinDATA, gpio.Out); err != nil {
+		return err
+	}
+	if err := m.dev.SetDirection(PinCLK, gpio.Out); err != nil {
+		return err
+	}
+	if err := m.dev.SetDirection(PinSTB, gpio.Out); err != nil {
+		return err
+	}
+
+	m.dev.SetValue(PinSTB, 1)
+	m.dev.SetValue(PinCLK, 1)
+
+	m.sendCmd(0x40)
+
+	intensity := byte(0x07)
+	activeDisplay := byte(0x08)
+	m.sendCmd(0x80 | intensity | activeDisplay)
+
+	m.sendCmd(0xC0)
+	for i := 0; i < 16; i++ {
+		m.sendCmd(0x00)
+	}
+
+	return nil
 }
 
 func (m *Module) sendData(addr, data byte) {
