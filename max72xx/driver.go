@@ -47,17 +47,23 @@ func (d *Driver) Close() {
 }
 
 // Display displays internel buffer con
-func (d *Driver) Display() {
+func (d *Driver) Display() error {
 	buff := make([]byte, d.Drivers*2)
 
 	for r := 0; r < 8; r++ {
-		for i:=0; i<d.Drivers; i++{
-			buff[i*2] = r+1
-			buff[]
+		rowNo := r + 1
+		for i := 0; i < d.Drivers; i++ {
+			buffIdx := d.Drivers*i + r
+			outIdx := (d.Drivers - i - 1) * 2
+			buff[outIdx] = byte(rowNo)
+			buff[outIdx+1] = d.buff[buffIdx]
 		}
 
+		if err := d.dev.Tx(buff, nil); err != nil {
+			return err
+		}
 	}
-
+	return nil
 }
 
 // Clear clears internel buffer
