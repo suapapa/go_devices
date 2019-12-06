@@ -1,4 +1,4 @@
-# epd2in13 is a driver for Waveshare's e-ink display module (v2) which use epd2in13
+# epd2in13 is a driver for Waveshare e-ink display module (v2) which use epd2in13
 
 [![GoDoc](http://godoc.org/github.com/suapapa/go_devices/epd2in13?status.svg)](http://godoc.org/github.com/suapapa/go_devices/epd2in13)
 
