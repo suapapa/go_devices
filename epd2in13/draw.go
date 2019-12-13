@@ -28,12 +28,7 @@ func (d *Display) DrawBuffer(b []byte) error {
 	}
 
 	d.sendCmd(0x24)
-	for j := 0; j < d.h; j++ {
-		for i := 0; i < lw; i++ {
-			d.sendData(b[i+j*lw])
-		}
-	}
-	// d.sendDatas(b) // TODO: is it works?
+	d.sendDatas(b)
 	d.TurnOnFull()
 
 	return nil
@@ -53,8 +48,8 @@ func (d *Display) Image2Buffer(img image.Image) ([]byte, error) {
 		for y := 0; y < imgH; y++ {
 			for x := 0; x < imgW; x++ {
 				if isBlackColor(img.At(x, y)) {
-					x = imgW - x
-					b[x/8+y*lw] &= ^(0x80 >> (x % 8))
+					xx := imgW - x
+					b[xx/8+y*lw] &= ^(0x80 >> (xx % 8))
 				}
 			}
 		}
@@ -79,7 +74,7 @@ func (d *Display) Image2Buffer(img image.Image) ([]byte, error) {
 func isBlackColor(c color.Color) bool {
 	r, g, b, _ := c.RGBA()
 	if r != 0 || g != 0 || b != 0 {
-		return true
+		return false
 	}
-	return false
+	return true
 }

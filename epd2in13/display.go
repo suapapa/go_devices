@@ -6,6 +6,7 @@ package epd2in13 // import "github.com/suapapa/go_devices/epd2in13"
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/goiot/exp/gpio"
@@ -37,6 +38,7 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 		return nil, err
 	}
 
+	log.Println("setup pins")
 	if err = gpioDev.SetDirection(PinRST, gpio.Out); err != nil {
 		return nil, err
 	}
@@ -57,6 +59,7 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 		h:       epd2in13Height,
 	}
 
+	// log.Println("reset display")
 	Display.Reset()
 
 	return Display, nil
@@ -64,6 +67,11 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 
 // Close closes all devices in Display
 func (d *Display) Close() {
+	d.Sleep()
+
+	d.gpioDev.SetValue(PinRST, 0)
+	d.gpioDev.SetValue(PinDC, 0)
+
 	if d.spiDev != nil {
 		d.spiDev.Close()
 	}
@@ -71,8 +79,6 @@ func (d *Display) Close() {
 	if d.gpioDev != nil {
 		d.gpioDev.Close()
 	}
-
-	d.Sleep()
 }
 
 // Reset does H/W reset if pinRst is not nil
@@ -151,7 +157,10 @@ func (d *Display) sendCmd(c byte) (err error) {
 	if err = d.gpioDev.SetValue(PinCS, 0); err != nil {
 		return
 	}
-	err = d.spiDev.Tx([]byte{c}, nil)
+	if err = d.spiDev.Tx([]byte{c}, nil); err != nil {
+		log.Fatal("fail to send cmd", err)
+		return
+	}
 	if err = d.gpioDev.SetValue(PinCS, 1); err != nil {
 		return
 	}
@@ -165,7 +174,10 @@ func (d *Display) sendData(b byte) (err error) {
 	if err = d.gpioDev.SetValue(PinCS, 0); err != nil {
 		return
 	}
-	err = d.spiDev.Tx([]byte{b}, nil)
+	if err = d.spiDev.Tx([]byte{b}, nil); err != nil {
+		// log.Fatal("fail to send data", err)
+		return
+	}
 	if err = d.gpioDev.SetValue(PinCS, 1); err != nil {
 		return
 	}
@@ -190,12 +202,13 @@ func (d *Display) waitTillNotBusy() {
 	var v int // 0: idle, 1: busy
 	var err error
 	for {
-		if v, err = d.gpioDev.Value(PinBusy); err == nil || v == 0 {
+		// log.Println("busy")
+		time.Sleep(100 * time.Millisecond)
+		if v, err = d.gpioDev.Value(PinBusy); err == nil && v == 0 {
 			return
 		}
 		if err != nil {
 			panic(err)
 		}
-		time.Sleep(100 * time.Millisecond)
 	}
 }

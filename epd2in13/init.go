@@ -44,6 +44,8 @@ var (
 
 // InitFull initialize in full mode
 func (d *Display) InitFull() {
+	d.Reset()
+
 	d.waitTillNotBusy()
 	d.sendCmd(0x12) // soft reset
 	d.waitTillNotBusy()
@@ -105,6 +107,8 @@ func (d *Display) InitFull() {
 
 // InitPart initialize in part mode
 func (d *Display) InitPart() {
+	d.Reset()
+
 	d.sendCmd(0x2C) //VCOM Voltage
 	d.sendData(0x26)
 
