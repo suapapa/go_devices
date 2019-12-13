@@ -9,7 +9,7 @@ import (
 func ExampleOpen() {
 	d, err := epd2in13.Open(
 		&spi.Devfs{Dev: "/dev/spidev0.0"},
-		&rpi_gpio.Mem{
+		&rpi_gpio.Sysfs{
 			PinMap: map[string]int{
 				epd2in13.PinRST:  17,
 				epd2in13.PinDC:   25,

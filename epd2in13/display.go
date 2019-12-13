@@ -31,7 +31,8 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 	if err != nil {
 		return nil, err
 	}
-	spiDev.SetCSChange(false) // TODO
+	spiDev.SetCSChange(false)
+	spiDev.SetMode(spi.Mode0)
 
 	gpioDev, err := gpio.Open(ctr)
 	if err != nil {
@@ -52,17 +53,17 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 		return nil, err
 	}
 
-	Display := &Display{
+	disp := &Display{
 		spiDev:  spiDev,
 		gpioDev: gpioDev,
 		w:       epd2in13Width,
 		h:       epd2in13Height,
 	}
 
-	// log.Println("reset display")
-	Display.Reset()
+	disp.Reset()
+	disp.InitFull()
 
-	return Display, nil
+	return disp, nil
 }
 
 // Close closes all devices in Display
@@ -97,20 +98,6 @@ func (d *Display) Reset() error {
 	return nil
 }
 
-// // DrawPixel sets a dot to the internal buffer
-// func (d *Display) DrawPixel(x, y int, p bool) {
-// 	if x >= d.w || y >= d.h {
-// 		return
-// 	}
-
-// 	if p { // white
-// 		d.buff[x+(y/8)*d.w] |= byte(1 << (uint(y) & 7))
-// 	} else { // black
-// 		d.buff[x+(y/8)*d.w] &= byte(^(1 << (uint(y) & 7)))
-// 	}
-// }
-
-// Clear clears display with given color(8 bits)
 func (d *Display) Clear(c byte) {
 	lineWidth := (d.w + 7) / 8
 
@@ -158,7 +145,6 @@ func (d *Display) sendCmd(c byte) (err error) {
 		return
 	}
 	if err = d.spiDev.Tx([]byte{c}, nil); err != nil {
-		log.Fatal("fail to send cmd", err)
 		return
 	}
 	if err = d.gpioDev.SetValue(PinCS, 1); err != nil {
@@ -175,7 +161,6 @@ func (d *Display) sendData(b byte) (err error) {
 		return
 	}
 	if err = d.spiDev.Tx([]byte{b}, nil); err != nil {
-		// log.Fatal("fail to send data", err)
 		return
 	}
 	if err = d.gpioDev.SetValue(PinCS, 1); err != nil {
@@ -191,7 +176,9 @@ func (d *Display) sendDatas(bs []byte) (err error) {
 	if err = d.gpioDev.SetValue(PinCS, 0); err != nil {
 		return
 	}
-	err = d.spiDev.Tx(bs, nil)
+	if err = d.spiDev.Tx(bs, nil); err != nil {
+		return
+	}
 	if err = d.gpioDev.SetValue(PinCS, 1); err != nil {
 		return
 	}

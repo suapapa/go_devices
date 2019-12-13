@@ -13,10 +13,6 @@ const (
 )
 
 const (
-	// 122x250
 	epd2in13Width  = 122
 	epd2in13Height = 250
-
-	epd2in13FullUpdate = 0
-	epd2in13PartUpdate = 1
 )

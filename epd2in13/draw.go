@@ -54,7 +54,7 @@ func (d *Display) Image2Buffer(img image.Image) ([]byte, error) {
 			}
 		}
 		return b, nil
-	} else if imgW == d.h && imgH == d.w { // Horizontal
+	} else if imgW == d.h && imgH == d.w { // horizontal
 		for y := 0; y < imgH; y++ {
 			for x := 0; x < imgW; x++ {
 				newX := y
