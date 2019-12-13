@@ -6,9 +6,9 @@ package epd2in13
 
 // epd2in13 module should be connected in following pins
 const (
-	PinRST  = "RST"  // 17 for Rpi
-	PinDC   = "DC"   // 25 for Rpi
-	PinCS   = "CS"   // 8 for Rpi
+	PinRST = "RST" // 17 for Rpi
+	PinDC  = "DC"  // 25 for Rpi
+	// PinCS   = "CS"   // 8 for Rpi spi0.0
 	PinBusy = "BUSY" // 24 for Rpi
 )
 
