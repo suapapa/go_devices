@@ -93,9 +93,7 @@ func (d *Display) InitFull() {
 	d.sendData(epd2in13LutFullUpdate[75])
 
 	d.sendCmd(0x32)
-	for i := 0; i < 70; i++ {
-		d.sendData(epd2in13LutFullUpdate[i])
-	}
+	d.sendDatas(epd2in13LutFullUpdate[0:70])
 
 	d.sendCmd(0x4E) // set RAM x address count to 0
 	d.sendData(0x00)
@@ -115,9 +113,7 @@ func (d *Display) InitPart() {
 	d.waitTillNotBusy()
 
 	d.sendCmd(0x32)
-	for i := 0; i < 70; i++ {
-		d.sendData(epd2in13LutPartUpdate[i])
-	}
+	d.sendDatas(epd2in13LutPartUpdate[0:70])
 
 	d.sendCmd(0x37)
 	d.sendData(0x00)
