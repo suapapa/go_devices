@@ -98,16 +98,14 @@ func (d *Display) Reset() error {
 	return nil
 }
 
+// Clear fill display with given patten in byte (8 pixel)
 func (d *Display) Clear(c byte) {
 	lineWidth := (d.w + 7) / 8
-
-	d.sendCmd(0x24)
 	b := make([]byte, lineWidth*d.h)
 	for i := range b {
 		b[i] = c
 	}
-	d.sendDatas(b)
-	d.TurnOnFull()
+	d.DrawBuffer(b)
 }
 
 // TurnOnFull turns on full screen

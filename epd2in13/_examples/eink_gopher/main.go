@@ -40,21 +40,16 @@ func main() {
 	}
 
 	log.Println("init sequence...")
-	d.InitFull()
-	time.Sleep(3 * time.Second)
 
-	// log.Println("Clear...")
-	// d.Clear(0xFF)
-	// time.Sleep(3 * time.Second)
+	log.Println("Clear...")
+	d.Clear(0xFF)
+	time.Sleep(1 * time.Second)
 
-	// log.Println("Init sequence...")
-	// d.InitFull()
 	log.Println("draw image...")
 	err = d.DrawImage(img)
 	if err != nil {
 		log.Fatal(err)
 	}
-	time.Sleep(1 * time.Second)
 	log.Println("exit...")
 }
 

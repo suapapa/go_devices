@@ -13,7 +13,6 @@ func ExampleOpen() {
 			PinMap: map[string]int{
 				epd2in13.PinRST:  17,
 				epd2in13.PinDC:   25,
-				epd2in13.PinCS:   8,
 				epd2in13.PinBusy: 24,
 			},
 		},
