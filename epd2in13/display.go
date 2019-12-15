@@ -6,7 +6,6 @@ package epd2in13 // import "github.com/suapapa/go_devices/epd2in13"
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/goiot/exp/gpio"
@@ -39,7 +38,7 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 		return nil, err
 	}
 
-	log.Println("setup pins")
+	// log.Println("setup pins")
 	if err = gpioDev.SetDirection(PinRST, gpio.Out); err != nil {
 		return nil, err
 	}
