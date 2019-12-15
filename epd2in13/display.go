@@ -70,8 +70,8 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 func (d *Display) Close() {
 	d.Sleep()
 
-	d.gpioDev.SetValue(PinRST, 0)
-	d.gpioDev.SetValue(PinDC, 0)
+	// d.gpioDev.SetValue(PinRST, 1)
+	// d.gpioDev.SetValue(PinDC, 0)
 
 	if d.spiDev != nil {
 		d.spiDev.Close()
