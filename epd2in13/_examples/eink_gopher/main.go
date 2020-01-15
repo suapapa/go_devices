@@ -21,7 +21,7 @@ func main() {
 			Mode:     spi.Mode0,
 			MaxSpeed: 4000000,
 		},
-		&rpi_gpio.Sysfs{
+		&rpi_gpio.Mem{
 			PinMap: map[string]int{
 				epd2in13.PinRST:  17,
 				epd2in13.PinDC:   25,
