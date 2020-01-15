@@ -15,6 +15,7 @@ import (
 func main() {
 	imageFileName := os.Args[1]
 
+	log.Println("init sequence...")
 	d, err := epd2in13bc.Open(
 		&spi.Devfs{
 			Dev:      "/dev/spidev0.0",
@@ -38,7 +39,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	log.Println("init sequence...")
 
 	log.Println("Clear...")
 	d.Clear(0xF0, 0x0F)
@@ -49,8 +49,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	d.Sleep()
-	time.Sleep(1 * time.Second)
 	log.Println("exit...")
 }
 

@@ -4,6 +4,8 @@
 
 package epd2in13bc
 
+import "log"
+
 // Init initialize in full mode
 func (d *Display) Init() {
 	d.Reset()
@@ -23,6 +25,9 @@ func (d *Display) Init() {
 	d.sendData(0xF0)
 
 	d.sendCmd(0x61) // RESOLUTION_SETTING
+
+	log.Println(uint8(d.w), uint8(d.h>>8), uint8(d.h))
+
 	d.sendData(uint8(d.w))
 	d.sendData(uint8(d.h >> 8))
 	d.sendData(uint8(d.h))

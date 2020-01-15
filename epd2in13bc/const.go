@@ -17,7 +17,7 @@ const (
 	epd2in13bcHeight = 212
 
 	// epd2in13bc use 3 colors black, white and accent color (red or yellow)
-	black inkColor = iota
-	white
-	accent
+	black  inkColor = 0
+	white  inkColor = 1
+	accent inkColor = 2
 )

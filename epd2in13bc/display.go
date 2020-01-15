@@ -31,7 +31,7 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 	if err != nil {
 		return nil, err
 	}
-	spiDev.SetCSChange(false) // TODO
+	// spiDev.SetCSChange(false) // TODO
 
 	gpioDev, err := gpio.Open(ctr)
 	if err != nil {
@@ -49,16 +49,16 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 		return nil, err
 	}
 
-	Display := &Display{
+	disp := &Display{
 		spiDev:  spiDev,
 		gpioDev: gpioDev,
 		w:       epd2in13bcWidth,
 		h:       epd2in13bcHeight,
 	}
 
-	Display.Init()
+	disp.Init()
 
-	return Display, nil
+	return disp, nil
 }
 
 // Close closes all devices in Display
@@ -94,39 +94,32 @@ func (d *Display) Reset() error {
 }
 
 // Clear clears display with given color(8 bits)
-func (d *Display) Clear(b, c byte) {
+func (d *Display) Clear(b, ry byte) {
 	lineWidth := (d.w + 7) / 8
 	buf := make([]byte, lineWidth*d.h)
 	for i := range buf {
 		buf[i] = b
 	}
 	d.sendCmd(0x10)
-	d.sendDatas(buf)
+	// d.sendDatas(buf)
+	for _, v := range buf {
+		d.sendData(v)
+	}
 	d.sendCmd(0x92)
 
 	for i := range buf {
-		buf[i] = c
+		buf[i] = ry
 	}
 	d.sendCmd(0x13)
-	d.sendDatas(buf)
+	// d.sendDatas(buf)
+	for _, v := range buf {
+		d.sendData(v)
+	}
 	d.sendCmd(0x92)
 
 	d.sendCmd(0x12)
 	d.waitTillNotBusy()
 }
-
-// TurnOnFull turns on full screen
-// func (d *Display) TurnOnFull() {
-// 	d.sendCmd(0x22)
-// 	d.sendData(0xC7)
-// 	d.sendCmd(0x20)
-// 	d.waitTillNotBusy()
-// }
-
-// TurnOnPart turns on part screen
-// func (d *Display) TurnOnPart() {
-// 	panic(fmt.Errorf("epd2in13bc not have partial update mode"))
-// }
 
 // Sleep makes display sleep
 func (d *Display) Sleep() {
@@ -152,7 +145,7 @@ func (d *Display) sendData(b byte) (err error) {
 		return
 	}
 	if err = d.spiDev.Tx([]byte{b}, nil); err != nil {
-		// log.Fatal("fail to send data", err)
+		log.Fatal("fail to send data", err)
 		return
 	}
 	return
@@ -160,6 +153,7 @@ func (d *Display) sendData(b byte) (err error) {
 
 func (d *Display) sendDatas(bs []byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 1); err != nil {
+		log.Fatal("fail to send datas", err)
 		return
 	}
 	err = d.spiDev.Tx(bs, nil)
@@ -169,14 +163,16 @@ func (d *Display) sendDatas(bs []byte) (err error) {
 func (d *Display) waitTillNotBusy() {
 	var v int // 1: idle, 0: busy
 	var err error
+	time.Sleep(1 * time.Second)
 	for {
-		// log.Println("busy")
-		time.Sleep(100 * time.Millisecond)
 		if v, err = d.gpioDev.Value(PinBusy); err == nil && v == 1 {
-			return
+			break
 		}
 		if err != nil {
 			panic(err)
 		}
+		log.Println("busy")
+		time.Sleep(100 * time.Millisecond)
 	}
+	log.Println("idle")
 }
