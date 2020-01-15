@@ -25,7 +25,6 @@ func main() {
 			PinMap: map[string]int{
 				epd2in13bc.PinRST:  17,
 				epd2in13bc.PinDC:   25,
-				epd2in13bc.PinCS:   8,
 				epd2in13bc.PinBusy: 24,
 			},
 		},
@@ -39,22 +38,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	log.Println("init sequence...")
-	d.InitFull()
+
+	log.Println("Clear...")
+	d.Clear(0xF0, 0x0F)
 	time.Sleep(3 * time.Second)
 
-	// log.Println("Clear...")
-	// d.Clear(0xFF)
-	// time.Sleep(3 * time.Second)
-
-	// log.Println("Init sequence...")
-	// d.InitFull()
 	log.Println("draw image...")
 	err = d.DrawImage(img)
 	if err != nil {
 		log.Fatal(err)
 	}
+	d.Sleep()
 	time.Sleep(1 * time.Second)
 	log.Println("exit...")
 }

@@ -45,9 +45,6 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 	if err = gpioDev.SetDirection(PinDC, gpio.Out); err != nil {
 		return nil, err
 	}
-	if err = gpioDev.SetDirection(PinCS, gpio.Out); err != nil {
-		return nil, err
-	}
 	if err = gpioDev.SetDirection(PinBusy, gpio.In); err != nil {
 		return nil, err
 	}
@@ -59,8 +56,7 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 		h:       epd2in13bcHeight,
 	}
 
-	// log.Println("reset display")
-	Display.Reset()
+	Display.Init()
 
 	return Display, nil
 }
@@ -144,14 +140,8 @@ func (d *Display) sendCmd(c byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 0); err != nil {
 		return
 	}
-	if err = d.gpioDev.SetValue(PinCS, 0); err != nil {
-		return
-	}
 	if err = d.spiDev.Tx([]byte{c}, nil); err != nil {
 		log.Fatal("fail to send cmd", err)
-		return
-	}
-	if err = d.gpioDev.SetValue(PinCS, 1); err != nil {
 		return
 	}
 	return
@@ -161,14 +151,8 @@ func (d *Display) sendData(b byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 1); err != nil {
 		return
 	}
-	if err = d.gpioDev.SetValue(PinCS, 0); err != nil {
-		return
-	}
 	if err = d.spiDev.Tx([]byte{b}, nil); err != nil {
 		// log.Fatal("fail to send data", err)
-		return
-	}
-	if err = d.gpioDev.SetValue(PinCS, 1); err != nil {
 		return
 	}
 	return
@@ -178,13 +162,7 @@ func (d *Display) sendDatas(bs []byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 1); err != nil {
 		return
 	}
-	if err = d.gpioDev.SetValue(PinCS, 0); err != nil {
-		return
-	}
 	err = d.spiDev.Tx(bs, nil)
-	if err = d.gpioDev.SetValue(PinCS, 1); err != nil {
-		return
-	}
 	return
 }
 
