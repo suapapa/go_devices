@@ -60,4 +60,6 @@ func (d *Display) init(lut []byte) {
 	d.sendCmd(0x32) // WRITE_LUT_REGISTER
 
 	d.sendDatas(lut)
+
+	d.waitTillNotBusy()
 }

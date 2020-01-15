@@ -41,9 +41,10 @@ func (d *Display) DrawBuffer(b []byte) error {
 	for j := 0; j < d.h; j++ {
 		d.setCursor(0, j)
 		d.sendCmd(0x24) // WRITE_RAM
-		for i := 0; i < lw; i++ {
-			d.sendData(b[i+j*lw])
-		}
+		// for i := 0; i < lw; i++ {
+		// 	d.sendData(b[i+j*lw])
+		// }
+		d.sendDatas(b[j*lw : ((lw-1)+j*lw)+1])
 	}
 	d.turnOn()
 
@@ -74,11 +75,9 @@ func (d *Display) setCursor(x, y int) {
 
 // Image2Buffer returns monochrome image buffer from image.Image
 func (d *Display) Image2Buffer(img image.Image) ([]byte, error) {
-	lw := (d.w + 7) / 8
-	b := make([]byte, lw*d.h)
-	// fill white
+	b := make([]byte, (d.w/8)*d.h)
 	for i := range b {
-		b[i] = 0xFF
+		b[i] = 0xFF // fill white
 	}
 
 	imgW, imgH := img.Bounds().Dx(), img.Bounds().Dy()
@@ -86,8 +85,7 @@ func (d *Display) Image2Buffer(img image.Image) ([]byte, error) {
 		for y := 0; y < imgH; y++ {
 			for x := 0; x < imgW; x++ {
 				if isBlackColor(img.At(x, y)) {
-					xx := imgW - x
-					b[xx/8+y*lw] &= ^(0x80 >> (xx % 8))
+					b[(x+d.w)/8] &= ^(0x80 >> (x % 8))
 				}
 			}
 		}
@@ -98,8 +96,7 @@ func (d *Display) Image2Buffer(img image.Image) ([]byte, error) {
 				newX := y
 				newY := d.h - x - 1
 				if isBlackColor(img.At(x, y)) {
-					newY = imgW - newY - 1
-					b[newX/8+newY*lw] &= ^(0x80 >> (y % 8))
+					b[(newX+newY*d.w)/8] &= ^(0x80 >> (y % 8))
 				}
 			}
 		}

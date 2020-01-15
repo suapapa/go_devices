@@ -116,7 +116,7 @@ func (d *Display) sendCmd(c byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 0); err != nil {
 		return
 	}
-	time.Sleep(10 * time.Millisecond)
+	// time.Sleep(10 * time.Millisecond)
 	if err = d.spiDev.Tx([]byte{c}, nil); err != nil {
 		return
 	}
@@ -127,7 +127,7 @@ func (d *Display) sendData(b byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 1); err != nil {
 		return
 	}
-	time.Sleep(10 * time.Millisecond)
+	// time.Sleep(10 * time.Millisecond)
 	if err = d.spiDev.Tx([]byte{b}, nil); err != nil {
 		return
 	}
@@ -138,7 +138,7 @@ func (d *Display) sendDatas(bs []byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 1); err != nil {
 		return
 	}
-	time.Sleep(10 * time.Millisecond)
+	// time.Sleep(10 * time.Millisecond)
 	if err = d.spiDev.Tx(bs, nil); err != nil {
 		return
 	}
@@ -149,13 +149,14 @@ func (d *Display) waitTillNotBusy() {
 	var v int // 0: idle, 1: busy
 	var err error
 	for {
-		// log.Println("busy")
 		if v, err = d.gpioDev.Value(PinBusy); err == nil && v == 0 {
+			// log.Println("idle")
 			return
 		}
 		if err != nil {
 			panic(err)
 		}
+		// log.Println("busy")
 		time.Sleep(200 * time.Millisecond)
 	}
 }
