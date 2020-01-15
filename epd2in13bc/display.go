@@ -131,8 +131,10 @@ func (d *Display) Sleep() {
 
 func (d *Display) sendCmd(c byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 0); err != nil {
+		log.Fatal("fail to set gpio value", err)
 		return
 	}
+	time.Sleep(100 * time.Microsecond) // TODO: need it?
 	if err = d.spiDev.Tx([]byte{c}, nil); err != nil {
 		log.Fatal("fail to send cmd", err)
 		return
@@ -142,8 +144,10 @@ func (d *Display) sendCmd(c byte) (err error) {
 
 func (d *Display) sendData(b byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 1); err != nil {
+		log.Fatal("fail to set gpio value", err)
 		return
 	}
+	time.Sleep(100 * time.Microsecond) // TODO: need it?
 	if err = d.spiDev.Tx([]byte{b}, nil); err != nil {
 		log.Fatal("fail to send data", err)
 		return
@@ -153,10 +157,14 @@ func (d *Display) sendData(b byte) (err error) {
 
 func (d *Display) sendDatas(bs []byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 1); err != nil {
+		log.Fatal("fail to set gpio value", err)
+		return
+	}
+	time.Sleep(100 * time.Microsecond) // TODO: need it?
+	if err = d.spiDev.Tx(bs, nil); err != nil {
 		log.Fatal("fail to send datas", err)
 		return
 	}
-	err = d.spiDev.Tx(bs, nil)
 	return
 }
 
