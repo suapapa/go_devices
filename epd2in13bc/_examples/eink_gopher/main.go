@@ -13,7 +13,6 @@ import (
 )
 
 func main() {
-	imageFileName := os.Args[1]
 
 	log.Println("init sequence...")
 	d, err := epd2in13bc.Open(
@@ -22,7 +21,7 @@ func main() {
 			Mode:     spi.Mode0,
 			MaxSpeed: 4000000,
 		},
-		&rpi_gpio.Sysfs{
+		&rpi_gpio.Mem{
 			PinMap: map[string]int{
 				epd2in13bc.PinRST:  17,
 				epd2in13bc.PinDC:   25,
@@ -35,16 +34,16 @@ func main() {
 	}
 	defer d.Close()
 
-	img, err := openPNG(imageFileName)
-	if err != nil {
-		panic(err)
-	}
-
 	log.Println("Clear...")
 	d.Clear(0xF0, 0x0F)
 	time.Sleep(3 * time.Second)
 
 	log.Println("draw image...")
+	imageFileName := os.Args[1]
+	img, err := openPNG(imageFileName)
+	if err != nil {
+		panic(err)
+	}
 	err = d.DrawImage(img)
 	if err != nil {
 		log.Fatal(err)
