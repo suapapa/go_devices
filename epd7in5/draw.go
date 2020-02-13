@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"log"
 	"time"
 )
 
@@ -35,6 +36,7 @@ func (d *Display) Clear() {
 
 // DrawBuffer draws buffer to display
 func (d *Display) DrawBuffer(b []byte) error {
+	log.Println("DrawBuffer start")
 	d.sendCmd(0x10)
 	for i := 0; i < d.w/4*d.h; i++ {
 		tmp1 := b[i]
@@ -67,11 +69,13 @@ func (d *Display) DrawBuffer(b []byte) error {
 	d.sendCmd(0x12)
 	time.Sleep(100 * time.Millisecond)
 	d.waitTillNotBusy()
+	log.Println("DrawBuffer end")
 	return nil
 }
 
 // Image2Buffer returns monochrome image buffer from image.Image
 func (d *Display) Image2Buffer(img image.Image) ([]byte, error) {
+	log.Println("Image2Buffer")
 	b := make([]byte, d.w*d.h/4)
 
 	imgW, imgH := img.Bounds().Dx(), img.Bounds().Dy()

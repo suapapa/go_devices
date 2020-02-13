@@ -111,9 +111,7 @@ func (d *Display) sendCmd(c byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 0); err != nil {
 		return
 	}
-	time.Sleep(1 * time.Millisecond)
 	if err = d.spiDev.Tx([]byte{c}, nil); err != nil {
-		time.Sleep(1 * time.Millisecond)
 		return
 	}
 	return
@@ -123,9 +121,7 @@ func (d *Display) sendData(b byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 1); err != nil {
 		return
 	}
-	time.Sleep(1 * time.Millisecond)
 	if err = d.spiDev.Tx([]byte{b}, nil); err != nil {
-		time.Sleep(1 * time.Millisecond)
 		return
 	}
 	return
@@ -135,9 +131,7 @@ func (d *Display) sendDatas(bs []byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 1); err != nil {
 		return
 	}
-	time.Sleep(1 * time.Millisecond)
 	if err = d.spiDev.Tx(bs, nil); err != nil {
-		time.Sleep(1 * time.Millisecond)
 		return
 	}
 	return
