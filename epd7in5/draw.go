@@ -37,7 +37,7 @@ func (d *Display) Clear() {
 // DrawBuffer draws buffer to display
 func (d *Display) DrawBuffer(b []byte) error {
 	log.Println("DrawBuffer start")
-	d.sendCmd(0x10)
+	db := make([]byte, 0)
 	for i := 0; i < d.w/4*d.h; i++ {
 		tmp1 := b[i]
 		var tmp2 byte
@@ -61,11 +61,15 @@ func (d *Display) DrawBuffer(b []byte) error {
 				tmp2 |= 0x04
 			}
 			tmp1 = (tmp1 << 2) & 0xFF
-			d.sendData(tmp2)
+			// d.sendData(tmp2)
+			db = append(db, tmp2)
 			j++
 		}
 	}
+	log.Println("making display buffer done db len =", len(db))
 
+	d.sendCmd(0x10)
+	d.sendDatas(db)
 	d.sendCmd(0x12)
 	time.Sleep(100 * time.Millisecond)
 	d.waitTillNotBusy()

@@ -142,6 +142,7 @@ func (d *Display) waitTillNotBusy() {
 	var err error
 	// time.Sleep(time.Second)
 	for {
+		time.Sleep(100 * time.Millisecond)
 		if v, err = d.gpioDev.Value(PinBusy); err == nil && v != 0 {
 			log.Println("idle", v)
 			return
@@ -150,6 +151,5 @@ func (d *Display) waitTillNotBusy() {
 			panic(err)
 		}
 		log.Println("busy")
-		time.Sleep(100 * time.Millisecond)
 	}
 }
