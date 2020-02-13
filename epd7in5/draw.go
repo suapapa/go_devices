@@ -80,28 +80,29 @@ func (d *Display) Image2Buffer(img image.Image) ([]byte, error) {
 			for x := 0; x < imgW; x++ {
 				switch checkColor(img.At(x, y)) {
 				case black:
-					b[x+y*d.w/4] &= ^(0xC0 >> x % 4 * 2)
+					b[(x+y*d.w)/4] &= ^(0xC0 >> x % 4 * 2)
 				case gray:
-					b[x+y*d.w/4] &= ^(0xC0 >> x % 4 * 2)
-					b[x+y*d.w/4] |= (0x40 >> x % 4 * 2)
+					b[(x+y*d.w)/4] &= ^(0xC0 >> x % 4 * 2)
+					b[(x+y*d.w)/4] |= (0x40 >> x % 4 * 2)
 				case white:
-					b[x+y*d.w/4] |= (0xC0 >> x % 4 * 2)
+					b[(x+y*d.w)/4] |= (0xC0 >> x % 4 * 2)
 				}
 			}
 		}
 	} else if imgW == d.h && imgH == d.w {
 		for y := 0; y < imgH; y++ {
 			for x := 0; x < imgW; x++ {
-				nx := y
-				ny := d.h - x - 1
+				nx := y           // 160
+				ny := d.h - x - 1 // 383
+				// log.Println(x, y, nx, ny, nx+ny*d.w/4)
 				switch checkColor(img.At(x, y)) {
 				case black:
-					b[nx+ny*d.w/4] &= ^(0xC0 >> x % 4 * 2)
+					b[(nx+ny*d.w)/4] &= ^(0xC0 >> x % 4 * 2)
 				case gray:
-					b[nx+ny*d.w/4] &= ^(0xC0 >> x % 4 * 2)
-					b[nx+ny*d.w/4] |= (0x40 >> x % 4 * 2)
+					b[(nx+ny*d.w)/4] &= ^(0xC0 >> x % 4 * 2)
+					b[(nx+ny*d.w)/4] |= (0x40 >> x % 4 * 2)
 				case white:
-					b[nx+ny*d.w/4] |= (0xC0 >> x % 4 * 2)
+					b[(nx+ny*d.w)/4] |= (0xC0 >> x % 4 * 2)
 				}
 			}
 		}
