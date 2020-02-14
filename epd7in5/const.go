@@ -11,6 +11,7 @@ const (
 	PinRST  = "RST"  // 17 for Rpi
 	PinDC   = "DC"   // 25 for Rpi
 	PinBusy = "BUSY" // 24 for Rpi
+	PinCS   = "CS"   // 8 for Rpi
 
 	epd7in5Width  = 640
 	epd7in5Height = 384

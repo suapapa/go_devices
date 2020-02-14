@@ -31,8 +31,8 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 	if err != nil {
 		return nil, err
 	}
-	spiDev.SetCSChange(false)
-	spiDev.SetMode(spi.Mode0)
+	// spiDev.SetMode(spi.Mode0)
+	spiDev.SetCSChange(true)
 
 	gpioDev, err := gpio.Open(ctr)
 	if err != nil {
@@ -46,9 +46,9 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 	if err = gpioDev.SetDirection(PinDC, gpio.Out); err != nil {
 		return nil, err
 	}
-	// if err = gpioDev.SetDirection(PinCS, gpio.Out); err != nil {
-	// 	return nil, err
-	// }
+	if err = gpioDev.SetDirection(PinCS, gpio.Out); err != nil {
+		return nil, err
+	}
 	if err = gpioDev.SetDirection(PinBusy, gpio.In); err != nil {
 		return nil, err
 	}
@@ -111,7 +111,13 @@ func (d *Display) sendCmd(c byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 0); err != nil {
 		return
 	}
+	if err = d.gpioDev.SetValue(PinCS, 0); err != nil {
+		return
+	}
 	if err = d.spiDev.Tx([]byte{c}, nil); err != nil {
+		return
+	}
+	if err = d.gpioDev.SetValue(PinCS, 1); err != nil {
 		return
 	}
 	return
@@ -121,7 +127,13 @@ func (d *Display) sendData(b byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 1); err != nil {
 		return
 	}
+	if err = d.gpioDev.SetValue(PinCS, 0); err != nil {
+		return
+	}
 	if err = d.spiDev.Tx([]byte{b}, nil); err != nil {
+		return
+	}
+	if err = d.gpioDev.SetValue(PinCS, 1); err != nil {
 		return
 	}
 	return
@@ -131,7 +143,13 @@ func (d *Display) sendDatas(bs []byte) (err error) {
 	if err = d.gpioDev.SetValue(PinDC, 1); err != nil {
 		return
 	}
+	if err = d.gpioDev.SetValue(PinCS, 0); err != nil {
+		return
+	}
 	if err = d.spiDev.Tx(bs, nil); err != nil {
+		return
+	}
+	if err = d.gpioDev.SetValue(PinCS, 1); err != nil {
 		return
 	}
 	return
