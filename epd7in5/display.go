@@ -62,7 +62,7 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 		h:       epd7in5Height,
 	}
 
-	disp.Init()
+	disp.init()
 
 	return disp, nil
 }

@@ -6,16 +6,10 @@ package epd7in5
 
 import "time"
 
-// Init initialize display panel
-func (d *Display) Init() {
-	d.Reset()
-	time.Sleep(time.Second)
-	d.init()
-}
-
 func (d *Display) init() {
 	// EPD hardware init start
 	d.Reset()
+	time.Sleep(time.Second)
 
 	d.sendCmd(0x01) // POWER_SETTING
 	d.sendData(0x37)

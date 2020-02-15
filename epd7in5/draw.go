@@ -74,8 +74,8 @@ func (d *Display) DrawBuffer(b []byte) error {
 	log.Println("making display buffer done db len =", len(db))
 
 	d.sendCmd(0x10)
-	for i := 0; i < len(db); i += 4096 {
-		d.sendDatas(db[i : i+4096])
+	for i := 0; i < len(db); i += 2048 {
+		d.sendDatas(db[i : i+2048])
 	}
 	d.refresh()
 	log.Println("DrawBuffer end")
@@ -110,12 +110,12 @@ func (d *Display) Image2Buffer(img image.Image) ([]byte, error) {
 				// log.Println(x, y, nx, ny, nx+ny*d.w/4)
 				switch checkColor(img.At(x, y)) {
 				case black:
-					b[(nx+ny*d.w)/4] &= ^(0xC0 >> x % 4 * 2)
+					b[(nx+ny*d.w)/4] &= ^(0xC0 >> y % 4 * 2)
 				case gray:
-					b[(nx+ny*d.w)/4] &= ^(0xC0 >> x % 4 * 2)
-					b[(nx+ny*d.w)/4] |= (0x40 >> x % 4 * 2)
+					b[(nx+ny*d.w)/4] &= ^(0xC0 >> y % 4 * 2)
+					b[(nx+ny*d.w)/4] |= (0x40 >> y % 4 * 2)
 				case white:
-					b[(nx+ny*d.w)/4] |= (0xC0 >> x % 4 * 2)
+					b[(nx+ny*d.w)/4] |= (0xC0 >> y % 4 * 2)
 				}
 			}
 		}

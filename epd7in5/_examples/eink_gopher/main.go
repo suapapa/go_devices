@@ -20,7 +20,7 @@ func main() {
 		&spi.Devfs{
 			Dev:      "/dev/spidev0.0",
 			Mode:     spi.Mode0,
-			MaxSpeed: 4000,
+			MaxSpeed: 4000000,
 		},
 		&rpi_gpio.Mem{
 			PinMap: map[string]int{
