@@ -29,14 +29,23 @@ func (d *Display) refresh() {
 }
 
 // Clear fill display with given patten in byte (8 pixel)
-func (d *Display) Clear() {
+func (d *Display) Clear() error {
+	db := make([]byte, d.w*d.h/2)
+	for i := 0; i < len(db); i++ {
+		db[i] = 0x33
+	}
+	// for i := 0; i < d.w/4*d.h; i++ {
+	// 	for j := 0; j < 4; j++ { // TODO:
+	// 		d.sendData(0x33)
+	// 	}
+	// }
 	d.sendCmd(0x10)
-	for i := 0; i < d.w/4*d.h; i++ {
-		for j := 0; j < 4; j++ { // TODO:
-			d.sendData(0x33)
-		}
+	for i := 0; i < len(db); i += 4096 {
+		d.sendDatas(db[i : i+4096])
 	}
 	d.refresh()
+
+	return nil
 }
 
 // DrawBuffer draws buffer to display
@@ -74,8 +83,8 @@ func (d *Display) DrawBuffer(b []byte) error {
 	log.Println("making display buffer done db len =", len(db))
 
 	d.sendCmd(0x10)
-	for i := 0; i < len(db); i += 2048 {
-		d.sendDatas(db[i : i+2048])
+	for i := 0; i < len(db); i += 4096 {
+		d.sendDatas(db[i : i+4096])
 	}
 	d.refresh()
 	log.Println("DrawBuffer end")
@@ -93,12 +102,12 @@ func (d *Display) Image2Buffer(img image.Image) ([]byte, error) {
 			for x := 0; x < imgW; x++ {
 				switch checkColor(img.At(x, y)) {
 				case black:
-					b[(x+y*d.w)/4] &= ^(0xC0 >> x % 4 * 2)
+					b[(x+y*d.w)/4] &= ^(0xC0 >> (x % 4 * 2))
 				case gray:
-					b[(x+y*d.w)/4] &= ^(0xC0 >> x % 4 * 2)
-					b[(x+y*d.w)/4] |= (0x40 >> x % 4 * 2)
+					b[(x+y*d.w)/4] &= ^(0xC0 >> (x % 4 * 2))
+					b[(x+y*d.w)/4] |= (0x40 >> (x % 4 * 2))
 				case white:
-					b[(x+y*d.w)/4] |= (0xC0 >> x % 4 * 2)
+					b[(x+y*d.w)/4] |= (0xC0 >> (x % 4 * 2))
 				}
 			}
 		}
@@ -107,15 +116,14 @@ func (d *Display) Image2Buffer(img image.Image) ([]byte, error) {
 			for x := 0; x < imgW; x++ {
 				nx := y           // 160
 				ny := d.h - x - 1 // 383
-				// log.Println(x, y, nx, ny, nx+ny*d.w/4)
 				switch checkColor(img.At(x, y)) {
 				case black:
-					b[(nx+ny*d.w)/4] &= ^(0xC0 >> y % 4 * 2)
+					b[(nx+ny*d.w)/4] &= ^(0xC0 >> (y % 4 * 2))
 				case gray:
-					b[(nx+ny*d.w)/4] &= ^(0xC0 >> y % 4 * 2)
-					b[(nx+ny*d.w)/4] |= (0x40 >> y % 4 * 2)
+					b[(nx+ny*d.w)/4] &= ^(0xC0 >> (y % 4 * 2))
+					b[(nx+ny*d.w)/4] |= (0x40 >> (y % 4 * 2))
 				case white:
-					b[(nx+ny*d.w)/4] |= (0xC0 >> y % 4 * 2)
+					b[(nx+ny*d.w)/4] |= (0xC0 >> (y % 4 * 2))
 				}
 			}
 		}

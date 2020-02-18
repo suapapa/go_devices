@@ -6,7 +6,6 @@ package epd7in5 // import "github.com/suapapa/go_devices/epd7in5"
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/goiot/exp/gpio"
@@ -32,7 +31,7 @@ func Open(bus spi_driver.Opener, ctr gpio_driver.Opener) (*Display, error) {
 		return nil, err
 	}
 	// spiDev.SetMode(spi.Mode0)
-	spiDev.SetCSChange(true)
+	spiDev.SetCSChange(false)
 
 	gpioDev, err := gpio.Open(ctr)
 	if err != nil {
@@ -162,12 +161,12 @@ func (d *Display) waitTillNotBusy() {
 	for {
 		time.Sleep(100 * time.Millisecond)
 		if v, err = d.gpioDev.Value(PinBusy); err == nil && v != 0 {
-			log.Println("idle", v)
+			// log.Println("idle", v)
 			return
 		}
 		if err != nil {
 			panic(err)
 		}
-		log.Println("busy")
+		// log.Println("busy")
 	}
 }

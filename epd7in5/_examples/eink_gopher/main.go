@@ -5,7 +5,6 @@ import (
 	"image/png"
 	"log"
 	"os"
-	"time"
 
 	"github.com/suapapa/go_devices/epd7in5"
 	rpi_gpio "github.com/suapapa/go_devices/rpi/gpio"
@@ -36,7 +35,12 @@ func main() {
 	}
 	defer d.Close()
 
-	time.Sleep(3 * time.Second)
+	// log.Println("clear...")
+	// err = d.Clear()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// time.Sleep(time.Second)
 
 	log.Println("draw image...")
 	img, err := openPNG(imageFileName)
@@ -48,7 +52,6 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Println("exit...")
-	time.Sleep(2 * time.Second)
 }
 
 func openPNG(filename string) (image.Image, error) {
