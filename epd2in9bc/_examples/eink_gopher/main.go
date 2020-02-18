@@ -5,7 +5,6 @@ import (
 	"image/png"
 	"log"
 	"os"
-	"time"
 
 	"github.com/suapapa/go_devices/epd2in9bc"
 	rpi_gpio "github.com/suapapa/go_devices/rpi/gpio"
@@ -18,9 +17,9 @@ func main() {
 	log.Println("init sequence...")
 	d, err := epd2in9bc.Open(
 		&spi.Devfs{
-			Dev:      "/dev/spidev0.0",
-			Mode:     spi.Mode0,
-			MaxSpeed: 400000,
+			Dev: "/dev/spidev0.0",
+			// Mode:     spi.Mode0,
+			// MaxSpeed: 4000000,
 		},
 		&rpi_gpio.Mem{
 			PinMap: map[string]int{
@@ -35,13 +34,13 @@ func main() {
 	}
 	defer d.Close()
 
-	log.Println("Stripe...")
-	d.Clear(0xF0, 0x0F)
-	time.Sleep(1 * time.Second)
+	// log.Println("Stripe...")
+	// d.Clear(0xF0, 0x0F)
+	// time.Sleep(1 * time.Second)
 
-	log.Println("Clear...")
-	d.Clear(0xFF, 0xFF)
-	time.Sleep(1 * time.Second)
+	// log.Println("Clear...")
+	// d.Clear(0xFF, 0xFF)
+	// time.Sleep(1 * time.Second)
 
 	log.Println("draw image...")
 	img, err := openPNG(imageFileName)

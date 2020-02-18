@@ -51,12 +51,26 @@ func (d *Display) DrawBuffer(b, ry []byte) error {
 	// for _, v := range b {
 	// 	d.sendData(v)
 	// }
-	d.sendDatas(b)
+	for i := 0; i < len(b); i += 4096 {
+		if vlen := len(b[i:]); vlen > 4096 {
+			d.sendDatas(b[i : i+4096])
+		} else {
+			d.sendDatas(b[i : i+vlen])
+		}
+	}
+	// d.sendDatas(b)
 	d.sendCmd(0x13)
 	// for _, v := range ry {
 	// 	d.sendData(v)
 	// }
-	d.sendDatas(ry)
+	for i := 0; i < len(ry); i += 4096 {
+		if vlen := len(ry[i:]); vlen > 4096 {
+			d.sendDatas(ry[i : i+4096])
+		} else {
+			d.sendDatas(ry[i : i+vlen])
+		}
+	}
+	// d.sendDatas(ry)
 	d.sendCmd(0x12)
 	d.waitTillNotBusy()
 

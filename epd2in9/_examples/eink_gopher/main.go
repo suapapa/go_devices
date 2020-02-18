@@ -42,6 +42,14 @@ func main() {
 	log.Println("init sequence...")
 
 	log.Println("Clear...")
+	d.Clear(0x0F)
+	time.Sleep(1 * time.Second)
+
+	log.Println("Clear...")
+	d.Clear(0xF0)
+
+	time.Sleep(1 * time.Second)
+	log.Println("Clear...")
 	d.Clear(0xFF)
 	time.Sleep(1 * time.Second)
 
