@@ -26,7 +26,7 @@ func main() {
 				epd7in5.PinRST:  17,
 				epd7in5.PinDC:   25,
 				epd7in5.PinBusy: 24,
-				epd7in5.PinCS:   8,
+				// epd7in5.PinCS:   8,
 			},
 		},
 	)

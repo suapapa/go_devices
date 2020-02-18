@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"log"
-	"time"
 )
 
 // DrawImage draws a image
@@ -22,9 +20,8 @@ func (d *Display) DrawImage(i image.Image) error {
 }
 
 func (d *Display) refresh() {
-	log.Println("refresh")
 	d.sendCmd(0x12)
-	time.Sleep(100 * time.Millisecond)
+	// time.Sleep(100 * time.Millisecond)
 	d.waitTillNotBusy()
 }
 
@@ -50,7 +47,7 @@ func (d *Display) Clear() error {
 
 // DrawBuffer draws buffer to display
 func (d *Display) DrawBuffer(b []byte) error {
-	log.Println("DrawBuffer start")
+	// log.Println("DrawBuffer start")
 	db := make([]byte, 0)
 	for i := 0; i < d.w/4*d.h; i++ {
 		tmp1 := b[i]
@@ -80,20 +77,20 @@ func (d *Display) DrawBuffer(b []byte) error {
 			j++
 		}
 	}
-	log.Println("making display buffer done db len =", len(db))
+	// log.Println("making display buffer done db len =", len(db))
 
 	d.sendCmd(0x10)
 	for i := 0; i < len(db); i += 4096 {
 		d.sendDatas(db[i : i+4096])
 	}
 	d.refresh()
-	log.Println("DrawBuffer end")
+	// log.Println("DrawBuffer end")
 	return nil
 }
 
 // Image2Buffer returns monochrome image buffer from image.Image
 func (d *Display) Image2Buffer(img image.Image) ([]byte, error) {
-	log.Println("Image2Buffer")
+	// log.Println("Image2Buffer")
 	b := make([]byte, d.w*d.h/4)
 
 	imgW, imgH := img.Bounds().Dx(), img.Bounds().Dy()
