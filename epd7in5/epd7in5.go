@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"time"
 
 	"github.com/suapapa/go_devices/epd7in5/gray3"
@@ -79,24 +80,36 @@ func (d *Dev) Bounds() image.Rectangle {
 	return d.rect
 }
 
+// // Draw implements display.Drawer
+// func (d *Dev) Draw(r image.Rectangle, src image.Image, sp image.Point) error {
+// 	if sp.X != 0 || sp.Y != 0 {
+// 		return fmt.Errorf("sp should start from 0,0")
+// 	}
+// 	if r.Dx() != w || r.Dy() != h {
+// 		return fmt.Errorf("rect shold be %dx%d", w, h)
+// 	}
+
+// 	buff, err := d.Image2Buffer(src)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return d.DrawBuffer(buff)
+// }
+
 // Draw implements display.Drawer
 func (d *Dev) Draw(r image.Rectangle, src image.Image, sp image.Point) error {
-	if sp.X != 0 || sp.Y != 0 {
-		return fmt.Errorf("sp should start from 0,0")
+	var buff []byte
+	if img, ok := src.(*gray3.Image); ok && r == d.rect && img.Rect == d.rect && sp.X == 0 && sp.Y == 0 {
+		buff = img.Pix
+	} else {
+		grayImg := gray3.NewImage(d.rect)
+		buff = grayImg.Pix
+		draw.Src.Draw(grayImg, r, src, sp)
 	}
-	if r.Dx() != w || r.Dy() != h {
-		return fmt.Errorf("rect shold be %dx%d", w, h)
-	}
-
-	buff, err := d.Image2Buffer(src)
-	if err != nil {
-		return err
-	}
-	return d.DrawBuffer(buff)
+	return d.drawInternal(buff)
 }
 
-// DrawBuffer draws buffer to display
-func (d *Dev) DrawBuffer(b []byte) error {
+func (d *Dev) drawInternal(b []byte) error {
 	// log.Println("DrawBuffer start")
 	db := make([]byte, 0)
 	for i := 0; i < w/4*h; i++ {
@@ -183,25 +196,20 @@ func (d *Dev) Image2Buffer(img image.Image) ([]byte, error) {
 	return b, nil
 }
 
-// Halt turns off the display
+// Halt turns off the display (clean up)
 func (d *Dev) Halt() error {
-	db := make([]byte, w*h/2)
-	for i := 0; i < len(db); i++ {
-		db[i] = 0x33
-	}
-	// for i := 0; i < d.w/4*d.h; i++ {
-	//      for j := 0; j < 4; j++ { // TODO:
-	//              d.sendData(0x33)
-	//      }
+	// db := make([]byte, w*h/2)
+	// for i := 0; i < len(db); i++ {
+	// 	db[i] = 0x33
 	// }
-	d.sendCmd(0x10)
-	for i := 0; i < len(db); i += 4096 {
-		d.sendDatas(db[i : i+4096])
-	}
-	d.sendCmd(0x12)
-	d.waitUntilIdle()
-
-	return nil
+	// d.sendCmd(0x10)
+	// for i := 0; i < len(db); i += 4096 {
+	// 	d.sendDatas(db[i : i+4096])
+	// }
+	// d.sendCmd(0x12)
+	// d.waitUntilIdle()
+	img := gray3.NewImage(d.rect)
+	return d.drawInternal(img.Pix)
 }
 
 // Reset can be also used to awaken the device
