@@ -123,12 +123,12 @@ func (d *Dev) drawInternal(b []byte) error {
 	}
 	// log.Println("making display buffer done db len =", len(db))
 
-	d.sendCmd(0x10)
+	d.sendCmd([]byte{0x10})
 	// TODO: need this?
 	for i := 0; i < len(db); i += 4096 {
-		d.sendDatas(db[i : i+4096])
+		d.sendData(db[i : i+4096])
 	}
-	d.sendCmd(0x12)
+	d.sendCmd([]byte{0x12})
 	d.waitUntilIdle()
 
 	return nil
@@ -154,10 +154,10 @@ func (d *Dev) Reset() {
 // The deep sleep mode would return to standby by hardware reset.
 // You can use Reset() to awaken and Init to re-initialize the device.
 func (d *Dev) Sleep() {
-	d.sendCmd(0x02) // power off
+	d.sendCmd([]byte{0x02}) // power off
 	d.waitUntilIdle()
-	d.sendCmd(0x07) // deep sleep
-	d.sendData(0xA5)
+	d.sendCmd([]byte{0x07}) // deep sleep
+	d.sendData([]byte{0xA5})
 }
 
 // Init initialize the display config. This method is already called when creating
@@ -165,45 +165,45 @@ func (d *Dev) Sleep() {
 //
 // It should be only used when you put the device to sleep and need to re-init the device.
 func (d *Dev) Init() error {
-	d.sendCmd(0x01) // POWER_SETTING
-	d.sendData(0x37)
-	d.sendData(0x00)
+	d.sendCmd([]byte{0x01}) // POWER_SETTING
+	d.sendData([]byte{0x37})
+	d.sendData([]byte{0x00})
 
-	d.sendCmd(0x00) // PANEL_SETTING
-	d.sendData(0xCF)
-	d.sendData(0x08)
+	d.sendCmd([]byte{0x00}) // PANEL_SETTING
+	d.sendData([]byte{0xCF})
+	d.sendData([]byte{0x08})
 
-	d.sendCmd(0x06) // BOOSTER_SOFT_START
-	d.sendData(0xc7)
-	d.sendData(0xcc)
-	d.sendData(0x28)
+	d.sendCmd([]byte{0x06}) // BOOSTER_SOFT_START
+	d.sendData([]byte{0xc7})
+	d.sendData([]byte{0xcc})
+	d.sendData([]byte{0x28})
 
-	d.sendCmd(0x04) // POWER_ON
+	d.sendCmd([]byte{0x04}) // POWER_ON
 	d.waitUntilIdle()
 
-	d.sendCmd(0x30) // PLL_CONTROL
-	d.sendData(0x3c)
+	d.sendCmd([]byte{0x30}) // PLL_CONTROL
+	d.sendData([]byte{0x3c})
 
-	d.sendCmd(0x41) // TEMPERATURE_CALIBRATION
-	d.sendData(0x00)
+	d.sendCmd([]byte{0x41}) // TEMPERATURE_CALIBRATION
+	d.sendData([]byte{0x00})
 
-	d.sendCmd(0x50) // VCOM_AND_DATA_INTERVAL_SETTING
-	d.sendData(0x77)
+	d.sendCmd([]byte{0x50}) // VCOM_AND_DATA_INTERVAL_SETTING
+	d.sendData([]byte{0x77})
 
-	d.sendCmd(0x60) // TCON_SETTING
-	d.sendData(0x22)
+	d.sendCmd([]byte{0x60}) // TCON_SETTING
+	d.sendData([]byte{0x22})
 
-	d.sendCmd(0x61)          // TCON_RESOLUTION
-	d.sendData(byte(w >> 8)) //source 640
-	d.sendData(byte(w & 0xff))
-	d.sendData(byte(h >> 8)) //gate 384
-	d.sendData(byte(h & 0xff))
+	d.sendCmd([]byte{0x61})          // TCON_RESOLUTION
+	d.sendData([]byte{byte(w >> 8)}) //source 640
+	d.sendData([]byte{byte(w & 0xff)})
+	d.sendData([]byte{byte(h >> 8)}) //gate 384
+	d.sendData([]byte{byte(h & 0xff)})
 
-	d.sendCmd(0x82)  // VCM_DC_SETTING
-	d.sendData(0x1E) // decide by LUT file
+	d.sendCmd([]byte{0x82})  // VCM_DC_SETTING
+	d.sendData([]byte{0x1E}) // decide by LUT file
 
-	d.sendCmd(0xe5) // FLASH MODE
-	d.sendData(0x03)
+	d.sendCmd([]byte{0xe5}) // FLASH MODE
+	d.sendData([]byte{0x03})
 
 	return nil
 }
@@ -214,25 +214,18 @@ func (d *Dev) waitUntilIdle() {
 	}
 }
 
-func (d *Dev) sendData(c byte) error {
+func (d *Dev) sendData(c []byte) error {
 	if err := d.dc.Out(gpio.High); err != nil {
 		return err
 	}
-	return d.c.Tx([]byte{c}, nil)
+	return d.c.Tx(c, nil)
 }
 
-func (d *Dev) sendDatas(cs []byte) error {
-	if err := d.dc.Out(gpio.High); err != nil {
-		return err
-	}
-	return d.c.Tx(cs, nil)
-}
-
-func (d *Dev) sendCmd(c byte) error {
+func (d *Dev) sendCmd(c []byte) error {
 	if err := d.dc.Out(gpio.Low); err != nil {
 		return err
 	}
-	return d.c.Tx([]byte{c}, nil)
+	return d.c.Tx(c, nil)
 }
 
 var _ display.Drawer = &Dev{}
