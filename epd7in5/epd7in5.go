@@ -80,22 +80,6 @@ func (d *Dev) Bounds() image.Rectangle {
 	return d.rect
 }
 
-// // Draw implements display.Drawer
-// func (d *Dev) Draw(r image.Rectangle, src image.Image, sp image.Point) error {
-// 	if sp.X != 0 || sp.Y != 0 {
-// 		return fmt.Errorf("sp should start from 0,0")
-// 	}
-// 	if r.Dx() != w || r.Dy() != h {
-// 		return fmt.Errorf("rect shold be %dx%d", w, h)
-// 	}
-
-// 	buff, err := d.Image2Buffer(src)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return d.DrawBuffer(buff)
-// }
-
 // Draw implements display.Drawer
 func (d *Dev) Draw(r image.Rectangle, src image.Image, sp image.Point) error {
 	var buff []byte
@@ -110,7 +94,6 @@ func (d *Dev) Draw(r image.Rectangle, src image.Image, sp image.Point) error {
 }
 
 func (d *Dev) drawInternal(b []byte) error {
-	// log.Println("DrawBuffer start")
 	db := make([]byte, 0)
 	for i := 0; i < w/4*h; i++ {
 		tmp1 := b[i]
@@ -149,65 +132,12 @@ func (d *Dev) drawInternal(b []byte) error {
 	}
 	d.sendCmd(0x12)
 	d.waitUntilIdle()
-	// log.Println("DrawBuffer end")
+
 	return nil
 }
 
-// Image2Buffer returns monochrome image buffer from image.Image
-// func (d *Dev) Image2Buffer(img image.Image) ([]byte, error) {
-// 	// log.Println("Image2Buffer")
-// 	b := make([]byte, w*h/4)
-
-// 	imgW, imgH := img.Bounds().Dx(), img.Bounds().Dy()
-// 	if imgW == w && imgH == h {
-// 		for y := 0; y < imgH; y++ {
-// 			for x := 0; x < imgW; x++ {
-// 				switch checkColor(img.At(x, y)) {
-// 				case black:
-// 					b[(x+y*w)/4] &= ^(0xC0 >> (x % 4 * 2))
-// 				case gray:
-// 					b[(x+y*w)/4] &= ^(0xC0 >> (x % 4 * 2))
-// 					b[(x+y*w)/4] |= (0x40 >> (x % 4 * 2))
-// 				case white:
-// 					b[(x+y*w)/4] |= (0xC0 >> (x % 4 * 2))
-// 				}
-// 			}
-// 		}
-// 	} else if imgW == h && imgH == w {
-// 		for y := 0; y < imgH; y++ {
-// 			for x := 0; x < imgW; x++ {
-// 				nx := y
-// 				ny := h - x - 1
-// 				switch checkColor(img.At(x, y)) {
-// 				case black:
-// 					b[(nx+ny*w)/4] &= ^(0xC0 >> (y % 4 * 2))
-// 				case gray:
-// 					b[(nx+ny*w)/4] &= ^(0xC0 >> (y % 4 * 2))
-// 					b[(nx+ny*w)/4] |= (0x40 >> (y % 4 * 2))
-// 				case white:
-// 					b[(nx+ny*w)/4] |= (0xC0 >> (y % 4 * 2))
-// 				}
-// 			}
-// 		}
-// 	} else {
-// 		return nil, fmt.Errorf("image size should be %dx%d of %dx%d", w, h, h, w)
-// 	}
-
-// 	return b, nil
-// }
-
 // Halt turns off the display (clean up)
 func (d *Dev) Halt() error {
-	// db := make([]byte, w*h/2)
-	// for i := 0; i < len(db); i++ {
-	// 	db[i] = 0x33
-	// }
-	// d.sendCmd(0x10)
-	// for i := 0; i < len(db); i += 4096 {
-	// 	d.sendDatas(db[i : i+4096])
-	// }
-	// d.sendCmd(0x12)
-	// d.waitUntilIdle()
 	img := gray3.NewImage(d.rect)
 	return d.drawInternal(img.Pix)
 }
@@ -306,24 +236,5 @@ func (d *Dev) sendCmd(c byte) error {
 	}
 	return d.c.Tx([]byte{c}, nil)
 }
-
-// type inkColor byte
-
-// const (
-// 	black inkColor = iota
-// 	gray
-// 	white
-// )
-
-// func checkColor(c color.Color) inkColor {
-// 	g := color.GrayModel.Convert(c).(color.Gray)
-
-// 	if g.Y < 64 {
-// 		return black
-// 	} else if g.Y < 192 {
-// 		return gray
-// 	}
-// 	return white
-// }
 
 var _ display.Drawer = &Dev{}
