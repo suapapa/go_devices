@@ -1,6 +1,8 @@
 package gray3
 
-import "image/color"
+import (
+	"image/color"
+)
 
 // Gray3 implements a 3 kinds of gray color.
 type Gray3 uint8
@@ -11,6 +13,18 @@ const (
 	Gray
 	Black
 )
+
+func (g Gray3) String() string {
+	switch g {
+	case White:
+		return "White"
+	case Gray:
+		return "Gray"
+	case Black:
+		return "Black"
+	}
+	return "Unknown"
+}
 
 // RGBA returns either all white, gray or black.
 func (g Gray3) RGBA() (uint32, uint32, uint32, uint32) {

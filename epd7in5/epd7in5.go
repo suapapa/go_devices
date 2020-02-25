@@ -130,6 +130,7 @@ func (d *Dev) DrawBuffer(b []byte) error {
 	// log.Println("making display buffer done db len =", len(db))
 
 	d.sendCmd(0x10)
+	// TODO: need this?
 	for i := 0; i < len(db); i += 4096 {
 		d.sendDatas(db[i : i+4096])
 	}
