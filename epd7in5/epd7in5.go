@@ -166,17 +166,13 @@ func (d *Dev) Sleep() {
 // It should be only used when you put the device to sleep and need to re-init the device.
 func (d *Dev) Init() error {
 	d.sendCmd([]byte{0x01}) // POWER_SETTING
-	d.sendData([]byte{0x37})
-	d.sendData([]byte{0x00})
+	d.sendData([]byte{0x37, 0x00})
 
 	d.sendCmd([]byte{0x00}) // PANEL_SETTING
-	d.sendData([]byte{0xCF})
-	d.sendData([]byte{0x08})
+	d.sendData([]byte{0xCF, 0x08})
 
 	d.sendCmd([]byte{0x06}) // BOOSTER_SOFT_START
-	d.sendData([]byte{0xc7})
-	d.sendData([]byte{0xcc})
-	d.sendData([]byte{0x28})
+	d.sendData([]byte{0xc7, 0xcc, 0x28})
 
 	d.sendCmd([]byte{0x04}) // POWER_ON
 	d.waitUntilIdle()
@@ -193,11 +189,9 @@ func (d *Dev) Init() error {
 	d.sendCmd([]byte{0x60}) // TCON_SETTING
 	d.sendData([]byte{0x22})
 
-	d.sendCmd([]byte{0x61})          // TCON_RESOLUTION
-	d.sendData([]byte{byte(w >> 8)}) //source 640
-	d.sendData([]byte{byte(w & 0xff)})
-	d.sendData([]byte{byte(h >> 8)}) //gate 384
-	d.sendData([]byte{byte(h & 0xff)})
+	d.sendCmd([]byte{0x61})                          // TCON_RESOLUTION
+	d.sendData([]byte{byte(w >> 8), byte(w & 0xff)}) //source 640
+	d.sendData([]byte{byte(h >> 8), byte(h & 0xff)}) //gate 384
 
 	d.sendCmd([]byte{0x82})  // VCM_DC_SETTING
 	d.sendData([]byte{0x1E}) // decide by LUT file
