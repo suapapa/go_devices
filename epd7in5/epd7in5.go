@@ -31,7 +31,7 @@ type Dev struct {
 }
 
 // NewSPI returns a Dev object that communicates over SPI to epd7in5 E-Paper display controller.
-func NewSPI(p spi.Port, dc, cs, rst gpio.PinOut, busy gpio.PinIO) (*Dev, error) {
+func NewSPI(p spi.Port, dc, rst gpio.PinOut, busy gpio.PinIO) (*Dev, error) {
 	if err := dc.Out(gpio.Low); err != nil {
 		return nil, err
 	}
@@ -44,7 +44,6 @@ func NewSPI(p spi.Port, dc, cs, rst gpio.PinOut, busy gpio.PinIO) (*Dev, error) 
 	d := &Dev{
 		c:    c,
 		dc:   dc,
-		cs:   cs,
 		rst:  rst,
 		busy: busy,
 		rect: image.Rect(0, 0, w, h),
@@ -60,10 +59,9 @@ func NewSPI(p spi.Port, dc, cs, rst gpio.PinOut, busy gpio.PinIO) (*Dev, error) 
 // and have the default config for the e-paper hat for raspberry pi
 func NewSPIHat(p spi.Port) (*Dev, error) {
 	dc := rpi.P1_22   // 25
-	cs := rpi.P1_24   // 8
 	rst := rpi.P1_11  // 17
 	busy := rpi.P1_18 // 24
-	return NewSPI(p, dc, cs, rst, busy)
+	return NewSPI(p, dc, rst, busy)
 }
 
 func (d *Dev) String() string {

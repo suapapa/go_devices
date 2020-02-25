@@ -18,8 +18,12 @@ type Image struct {
 func NewImage(r image.Rectangle) *Image {
 	w := r.Dx()
 	h := r.Dy()
+	pix := make([]byte, w*h/4)
+	for i := 0; i < len(pix); i++ {
+		pix[i] = 0b1111_1111
+	}
 	return &Image{
-		Pix:  make([]byte, w*h/4),
+		Pix:  pix,
 		Rect: r,
 	}
 }
