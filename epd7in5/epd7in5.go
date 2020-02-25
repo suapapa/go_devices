@@ -58,10 +58,10 @@ func NewSPI(p spi.Port, dc, cs, rst gpio.PinOut, busy gpio.PinIO) (*Dev, error) 
 // NewSPIHat returns a Dev object that communicates over SPI
 // and have the default config for the e-paper hat for raspberry pi
 func NewSPIHat(p spi.Port) (*Dev, error) {
-	dc := rpi.P1_22
-	cs := rpi.P1_24
-	rst := rpi.P1_11
-	busy := rpi.P1_18
+	dc := rpi.P1_22   // 25
+	cs := rpi.P1_24   // 8
+	rst := rpi.P1_11  // 17
+	busy := rpi.P1_18 // 24
 	return NewSPI(p, dc, cs, rst, busy)
 }
 
@@ -176,7 +176,7 @@ func (d *Dev) Image2Buffer(img image.Image) ([]byte, error) {
 			}
 		}
 	} else {
-		return nil, fmt.Errorf("image size should be %dx%d of %dx%d", d.w, d.h, d.h, d.w)
+		return nil, fmt.Errorf("image size should be %dx%d of %dx%d", w, h, h, w)
 	}
 
 	return b, nil
@@ -296,6 +296,25 @@ func (d *Dev) sendCmd(c byte) error {
 		return err
 	}
 	return d.c.Tx([]byte{c}, nil)
+}
+
+type inkColor byte
+
+const (
+	black inkColor = iota
+	gray
+	white
+)
+
+func checkColor(c color.Color) inkColor {
+	g := color.GrayModel.Convert(c).(color.Gray)
+
+	if g.Y < 64 {
+		return black
+	} else if g.Y < 192 {
+		return gray
+	}
+	return white
 }
 
 var _ display.Drawer = &Dev{}
