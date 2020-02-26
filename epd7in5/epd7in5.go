@@ -124,10 +124,7 @@ func (d *Dev) drawInternal(b []byte) error {
 	// log.Println("making display buffer done db len =", len(db))
 
 	d.sendCmd([]byte{0x10})
-	// TODO: need this?
-	for i := 0; i < len(db); i += 4096 {
-		d.sendData(db[i : i+4096])
-	}
+	d.sendData(db)
 	d.sendCmd([]byte{0x12})
 	d.waitUntilIdle()
 
