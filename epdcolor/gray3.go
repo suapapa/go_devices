@@ -1,4 +1,4 @@
-package gray3
+package epdcolor
 
 import (
 	"image/color"
@@ -9,19 +9,19 @@ type Gray3 uint8
 
 // Possible colors
 const (
-	White Gray3 = iota
-	Gray
-	Black
+	Gray3White Gray3 = iota
+	Gray3Gray
+	Gray3Black
 )
 
 func (g Gray3) String() string {
 	switch g {
-	case White:
-		return "White"
-	case Gray:
-		return "Gray"
-	case Black:
-		return "Black"
+	case Gray3White:
+		return "Gray3White"
+	case Gray3Gray:
+		return "Gray3Gray"
+	case Gray3Black:
+		return "Gray3Black"
 	}
 	return "Unknown"
 }
@@ -29,11 +29,11 @@ func (g Gray3) String() string {
 // RGBA returns either all white, gray or black.
 func (g Gray3) RGBA() (uint32, uint32, uint32, uint32) {
 	switch g {
-	case White:
+	case Gray3White:
 		return 0xffff, 0xffff, 0xffff, 0xffff
-	case Gray:
+	case Gray3Gray:
 		return 0xff00, 0xff00, 0xff00, 0xffff
-	case Black:
+	case Gray3Black:
 		return 0, 0, 0, 0xffff
 	}
 	return 0, 0, 0, 0xffff
@@ -50,12 +50,12 @@ func gray3Model(c color.Color) color.Color {
 	y := (19595*r + 38470*g + 7471*b + 1<<15) >> 24
 
 	// if y < 64 {
-	// 	return Black
+	// 	return Gray3Black
 	// } else if y < 192 {
-	// 	return Gray
+	// 	return Gray3Gray
 	// }
 	if y < 128 {
-		return Black
+		return Gray3Black
 	}
-	return White
+	return Gray3White
 }

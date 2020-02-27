@@ -1,4 +1,4 @@
-package bw
+package epdcolor
 
 import (
 	"image"
@@ -7,7 +7,7 @@ import (
 )
 
 // Image is a Gray3 image
-type Image struct {
+type BWImage struct {
 	// Pix holds images pixels
 	Pix []byte
 	// Rect is image.Rectangle
@@ -15,57 +15,57 @@ type Image struct {
 }
 
 // NewImage returns gray3.Image instance.
-func NewImage(r image.Rectangle) *Image {
+func NewBWImage(r image.Rectangle) *BWImage {
 	w := r.Dx()
 	h := r.Dy()
 	pix := make([]byte, w*h/8)
 	for i := 0; i < len(pix); i++ {
 		pix[i] = 0b1111_1111
 	}
-	return &Image{
+	return &BWImage{
 		Pix:  pix,
 		Rect: r,
 	}
 }
 
 // ColorModel implements draw.Image
-func (i *Image) ColorModel() color.Model {
+func (i *BWImage) ColorModel() color.Model {
 	return BWModel
 }
 
 // Bounds implements draw.Image
-func (i *Image) Bounds() image.Rectangle {
+func (i *BWImage) Bounds() image.Rectangle {
 	return i.Rect
 }
 
 // At implements draw.Image
-func (i *Image) At(x, y int) color.Color {
+func (i *BWImage) At(x, y int) color.Color {
 	pos := (x + y*i.Rect.Dx()) / 8
 	shift := 7 - (x % 8)
 	pix := (i.Pix[pos] >> shift) & 1
 	switch pix {
 	case 0:
-		return Black
+		return BWBlack
 	case 1:
-		return White
+		return BWWhite
 	}
 
-	return Black
+	return BWBlack
 }
 
 // Set implements draw.Image
-func (i *Image) Set(x, y int, c color.Color) {
+func (i *BWImage) Set(x, y int, c color.Color) {
 	if _, ok := c.(BW); !ok {
 		c = bwModel(c)
 	}
 	pos := (x + y*i.Rect.Dx()) / 8
 	shift := x % 8
 	switch c {
-	case Black:
+	case BWBlack:
 		i.Pix[pos] &= ^(0b1000_0000 >> shift)
-	case White:
+	case BWWhite:
 		i.Pix[pos] |= (0b1000_0000 >> shift)
 	}
 }
 
-var _ draw.Image = &Image{}
+var _ draw.Image = &BWImage{}

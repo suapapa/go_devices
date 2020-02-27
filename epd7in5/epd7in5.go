@@ -7,7 +7,7 @@ import (
 	"image/draw"
 	"time"
 
-	"github.com/suapapa/go_devices/epd7in5/gray3"
+	"github.com/suapapa/go_devices/epdcolor"
 	"periph.io/x/periph/conn"
 	"periph.io/x/periph/conn/display"
 	"periph.io/x/periph/conn/gpio"
@@ -70,7 +70,7 @@ func (d *Dev) String() string {
 
 // ColorModel implements display.Drawer
 func (d *Dev) ColorModel() color.Model {
-	return gray3.Gray3Model
+	return epdcolor.Gray3Model
 }
 
 // Bounds implements display.Drawer
@@ -81,10 +81,10 @@ func (d *Dev) Bounds() image.Rectangle {
 // Draw implements display.Drawer
 func (d *Dev) Draw(r image.Rectangle, src image.Image, sp image.Point) error {
 	var buff []byte
-	if img, ok := src.(*gray3.Image); ok && r == d.rect && img.Rect == d.rect && sp.X == 0 && sp.Y == 0 {
+	if img, ok := src.(*epdcolor.Gray3Image); ok && r == d.rect && img.Rect == d.rect && sp.X == 0 && sp.Y == 0 {
 		buff = img.Pix
 	} else {
-		grayImg := gray3.NewImage(d.rect)
+		grayImg := epdcolor.NewGray3Image(d.rect)
 		buff = grayImg.Pix
 		draw.Src.Draw(grayImg, r, src, sp)
 	}
@@ -133,7 +133,7 @@ func (d *Dev) drawInternal(b []byte) error {
 
 // Halt turns off the display (clean up)
 func (d *Dev) Halt() error {
-	img := gray3.NewImage(d.rect)
+	img := epdcolor.NewGray3Image(d.rect)
 	return d.drawInternal(img.Pix)
 }
 

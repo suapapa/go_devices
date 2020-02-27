@@ -1,4 +1,4 @@
-package bw
+package epdcolor
 
 import (
 	"image/color"
@@ -9,16 +9,16 @@ type BW uint8
 
 // Possible colors
 const (
-	White BW = iota
-	Black
+	BWWhite BW = iota
+	BWBlack
 )
 
 func (c BW) String() string {
 	switch c {
-	case White:
-		return "White"
-	case Black:
-		return "Black"
+	case BWWhite:
+		return "BWWhite"
+	case BWBlack:
+		return "BWBlack"
 	}
 	return "Unknown"
 }
@@ -26,9 +26,9 @@ func (c BW) String() string {
 // RGBA returns either all white, gray or black.
 func (c BW) RGBA() (uint32, uint32, uint32, uint32) {
 	switch c {
-	case White:
+	case BWWhite:
 		return 0xffff, 0xffff, 0xffff, 0xffff
-	case Black:
+	case BWBlack:
 		return 0, 0, 0, 0xffff
 	}
 	return 0, 0, 0, 0xffff
@@ -45,12 +45,12 @@ func bwModel(c color.Color) color.Color {
 	y := (19595*r + 38470*g + 7471*b + 1<<15) >> 24
 
 	// if y < 64 {
-	// 	return Black
+	// 	return BWBlack
 	// } else if y < 192 {
 	// 	return Gray
 	// }
 	if y < 128 {
-		return Black
+		return BWBlack
 	}
-	return White
+	return BWWhite
 }
