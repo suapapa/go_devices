@@ -49,13 +49,13 @@ func gray3Model(c color.Color) color.Color {
 	r, g, b, _ := c.RGBA()
 	y := (19595*r + 38470*g + 7471*b + 1<<15) >> 24
 
-	// if y < 64 {
-	// 	return Gray3Black
-	// } else if y < 192 {
-	// 	return Gray3Gray
-	// }
-	if y < 128 {
+	if y < 64 {
 		return Gray3Black
+	} else if y < 192 {
+		return Gray3Gray
 	}
+	// if y < 128 {
+	// 	return Gray3Black
+	// }
 	return Gray3White
 }
