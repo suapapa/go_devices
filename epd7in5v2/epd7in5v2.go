@@ -70,7 +70,7 @@ func (d *Dev) String() string {
 
 // ColorModel implements display.Drawer
 func (d *Dev) ColorModel() color.Model {
-	return epdcolor.BWModel
+	return epdcolor.WBModel
 }
 
 // Bounds implements display.Drawer
@@ -81,10 +81,10 @@ func (d *Dev) Bounds() image.Rectangle {
 // Draw implements display.Drawer
 func (d *Dev) Draw(r image.Rectangle, src image.Image, sp image.Point) error {
 	var buff []byte
-	if img, ok := src.(*epdcolor.BWImage); ok && r == d.rect && img.Rect == d.rect && sp.X == 0 && sp.Y == 0 {
+	if img, ok := src.(*epdcolor.WBImage); ok && r == d.rect && img.Rect == d.rect && sp.X == 0 && sp.Y == 0 {
 		buff = img.Pix
 	} else {
-		bwImg := epdcolor.NewBWImage(d.rect)
+		bwImg := epdcolor.NewWBImage(d.rect)
 		buff = bwImg.Pix
 		draw.Src.Draw(bwImg, r, src, sp)
 	}
@@ -103,7 +103,7 @@ func (d *Dev) drawInternal(b []byte) error {
 
 // Halt turns off the display (clean up)
 func (d *Dev) Halt() error {
-	img := epdcolor.NewBWImage(d.rect)
+	img := epdcolor.NewWBImage(d.rect)
 	return d.drawInternal(img.Pix)
 }
 
@@ -143,7 +143,7 @@ func (d *Dev) Init() error {
 	d.waitUntilIdle()
 
 	d.sendCmd([]byte{0x00})  // PANNEL SETTING
-	d.sendData([]byte{0x1F}) // KW-3f   KWR-2F  BWROTP 0f       BWOTP 1f
+	d.sendData([]byte{0x1F}) // KW-3f   KWR-2F  WBROTP 0f       WBOTP 1f
 
 	d.sendCmd([]byte{0x61})  // tres
 	d.sendData([]byte{0x03}) // source 800
