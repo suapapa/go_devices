@@ -14,7 +14,7 @@ const (
 )
 
 // Color is type for LED colors
-type Color int
+type Color byte
 
 // Available colors for leds
 const (
@@ -31,10 +31,10 @@ type Module struct {
 
 // Open opens a tm1638 Module
 // gpio driver should have following pins:
-//   * "DATA" : data pin
-//   * "CLK" : clock pin
-//   * "STB" : strobe pin
-func Open(data, clk, stb gpio.PinIO) (*Module, error) {
+//   * data : data pin
+//   * clk : clock pin
+//   * stb : strobe pin
+func Open(data gpio.PinIO, clk, stb gpio.PinOut) (*Module, error) {
 	m := &Module{
 		data: data,
 		clk:  clk,
@@ -147,8 +147,6 @@ func (m *Module) send(data byte) {
 }
 
 func (m *Module) receive() (data byte) {
-	// m.dev.SetDirection(PinDATA, gpio.In)
-	// m.dev.SetValue(PinDATA, 1) // TODO: is this makes data pin pull up?
 	m.data.In(gpio.PullUp, gpio.RisingEdge)
 
 	for i := 0; i < 8; i++ {
@@ -160,8 +158,6 @@ func (m *Module) receive() (data byte) {
 		m.clk.Out(gpio.High)
 	}
 
-	// m.dev.SetDirection(PinDATA, gpio.Out)
-	// m.dev.SetValue(PinDATA, 0)
 	m.data.Out(gpio.Low)
 
 	return
