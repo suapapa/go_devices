@@ -14,7 +14,7 @@ const (
 )
 
 // Color is type for LED colors
-type Color byte
+type Color int
 
 // Available colors for leds
 const (
@@ -25,7 +25,8 @@ const (
 
 // Module represents tm1638 based module
 type Module struct {
-	data, clk, stb gpio.PinIO
+	data     gpio.PinIO
+	clk, stb gpio.PinOut
 }
 
 // Open opens a tm1638 Module
@@ -54,13 +55,13 @@ func (m *Module) SetLed(pos int, led Color) {
 
 // SetFND sets FND in pos to data.
 // The bits in the data are displayed by mapping bellow
-//  -- 0 --
-// |       |
-// 5       1
-//  -- 6 --
-// 4       2
-// |       |
-//  -- 3 --  .7
+//     -- 0 --
+//    |       |
+//    5       1
+//     -- 6 --
+//    4       2
+//    |       |
+//     -- 3 --  .7
 func (m *Module) SetFND(pos int, data byte) {
 	m.sendData(byte(pos)<<1, data)
 }

@@ -11,7 +11,7 @@ func main() {
 		panic(err)
 	}
 
-	tm1638, err := tm1638.Open(
+	dev, err := tm1638.Open(
 		gpioreg.ByName("17"), // data
 		gpioreg.ByName("27"), // clk
 		gpioreg.ByName("22"), // stb
@@ -20,5 +20,12 @@ func main() {
 		panic(err)
 	}
 
-	tm1638.SetString("HelloWrd")
+	dev.SetString("HelloWrd")
+	for i := 0; i < 8; i++ {
+		if i%2 == 0 {
+			dev.SetLed(i, tm1638.Green)
+		} else {
+			dev.SetLed(i, tm1638.Red)
+		}
+	}
 }
