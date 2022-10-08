@@ -24,8 +24,8 @@ type Dev struct {
 	c conn.Conn
 }
 
-// NewSPI returns instance of MAX7219 which is connected in spi port, p
-func NewSPI(p spi.Port) (*Dev, error) {
+// New returns instance of MAX7219 which is connected in spi port, p
+func New(p spi.Port) (*Dev, error) {
 	c, err := p.Connect(10*physic.MegaHertz, spi.Mode0, 8)
 	if err != nil {
 		return nil, err
@@ -44,6 +44,7 @@ func (d *Dev) String() string {
 	return fmt.Sprintf("max7219.Dev{%s}", d.c)
 }
 
+// Shutdown takes display out of shutdown
 func (d *Dev) Shutdown(shutdown bool) error {
 	var v byte
 	if !shutdown {
@@ -52,6 +53,7 @@ func (d *Dev) Shutdown(shutdown bool) error {
 	return d.Write(REG_SHUTDOWN, v)
 }
 
+// DisplayTest start and stop a display test
 func (d *Dev) DisplayTest(onoff bool) error {
 	var v byte
 	if onoff {
@@ -60,6 +62,7 @@ func (d *Dev) DisplayTest(onoff bool) error {
 	return d.Write(REG_DISPLAY_TEST, v)
 }
 
+// Clear clears the display
 func (d *Dev) Clear() error {
 	for i := 0; i < 8; i += 1 {
 		return d.Write(byte(i), 0x00)
@@ -67,17 +70,41 @@ func (d *Dev) Clear() error {
 	return nil
 }
 
+// SetBrightness sets the LED display brightness
 func (d *Dev) SetBrightness(intensity byte) error {
 	intensity &= 0x00f
 	return d.Write(REG_INTENSITY, intensity)
 }
 
+// Write writes a data to reg
 func (d *Dev) Write(reg, data byte) error {
 	buf := []byte{reg, data}
 	return d.c.Tx(buf, nil)
 }
 
-func (d *Dev) LookupCode(ch byte) byte {
+// WriteChar write a ASCII character to a FND display
+func (d *Dev) WriteChar(reg, char byte) error {
+	buf := []byte{reg, d.lookupCode(char)}
+	return d.c.Tx(buf, nil)
+}
+
+/*
+*********************************************************************************************************
+* LED Segments:         a
+*                     ----
+*                   f|    |b
+*                    |  g |
+*                     ----
+*                   e|    |c
+*                    |    |
+*                     ----  o dp
+*                       d
+*   Register bits:
+*      bit:  7  6  5  4  3  2  1  0
+*           dp  a  b  c  d  e  f  g
+*********************************************************************************************************
+ */
+func (d *Dev) lookupCode(ch byte) byte {
 	font := map[byte]byte{
 		// {' ': 0x00,
 		'0': 0x7e,
