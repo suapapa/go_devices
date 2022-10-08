@@ -64,8 +64,10 @@ func (d *Dev) DisplayTest(onoff bool) error {
 
 // Clear clears the display
 func (d *Dev) Clear() error {
-	for i := 0; i < 8; i += 1 {
-		return d.Write(byte(i), 0x00)
+	for i := 0; i < 8; i++ {
+		if err := d.Write(byte(i+1), 0x00); err != nil {
+			return errors.Wrap(err, "fail to clear")
+		}
 	}
 	return nil
 }

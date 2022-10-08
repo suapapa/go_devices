@@ -23,10 +23,14 @@ func main() {
 	chk(err)
 
 	dev.DisplayTest(true)
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 	dev.DisplayTest(false)
 
-	dev.Shutdown(true)
+	// dev.Shutdown(true)
+	// time.Sleep(1 * time.Second)
+	// dev.Shutdown(false)
+
+	dev.Write(3, 1<<5)
 }
 
 func chk(err error) {
