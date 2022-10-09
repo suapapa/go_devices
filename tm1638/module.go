@@ -4,7 +4,9 @@
 
 package tm1638
 
-import "periph.io/x/periph/conn/gpio"
+import (
+	"periph.io/x/conn/v3/gpio"
+)
 
 // TM1638 module should be conncted in following gpio pins
 const (
@@ -31,9 +33,9 @@ type Module struct {
 
 // Open opens a tm1638 Module
 // gpio driver should have following pins:
-//   * data : data pin
-//   * clk : clock pin
-//   * stb : strobe pin
+//   - data : data pin
+//   - clk : clock pin
+//   - stb : strobe pin
 func Open(data gpio.PinIO, clk, stb gpio.PinOut) (*Module, error) {
 	m := &Module{
 		data: data,
@@ -55,13 +57,14 @@ func (m *Module) SetLed(pos int, led Color) {
 
 // SetFND sets FND in pos to data.
 // The bits in the data are displayed by mapping bellow
-//     -- 0 --
-//    |       |
-//    5       1
-//     -- 6 --
-//    4       2
-//    |       |
-//     -- 3 --  .7
+//
+//	 -- 0 --
+//	|       |
+//	5       1
+//	 -- 6 --
+//	4       2
+//	|       |
+//	 -- 3 --  .7
 func (m *Module) SetFND(pos int, data byte) {
 	m.sendData(byte(pos)<<1, data)
 }

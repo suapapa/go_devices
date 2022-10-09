@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"periph.io/x/periph/conn"
-	"periph.io/x/periph/conn/i2c"
+	"periph.io/x/conn/v3"
+	"periph.io/x/conn/v3/i2c"
 )
 
 // DefaultAddr is defulat address of pcf8574
