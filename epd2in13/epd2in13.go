@@ -19,6 +19,8 @@ import (
 const (
 	w = 122
 	h = 250
+
+	spiBufSize = 4096
 )
 
 // Dev is open handle to display controller.
@@ -161,17 +163,39 @@ func (d *Dev) waitUntilIdle() {
 }
 
 func (d *Dev) sendData(c []byte) error {
-	if err := d.dc.Out(gpio.High); err != nil {
-		return err
+	for i := 0; i < len(c); i += spiBufSize {
+		buf := c[i:min(i+spiBufSize, len(c))]
+
+		if err := d.dc.Out(gpio.High); err != nil {
+			return err
+		}
+		if err := d.c.Tx(buf, nil); err != nil {
+			return err
+		}
 	}
-	return d.c.Tx(c, nil)
+	return nil
+
 }
 
 func (d *Dev) sendCmd(c []byte) error {
-	if err := d.dc.Out(gpio.Low); err != nil {
-		return err
+	for i := 0; i < len(c); i += spiBufSize {
+		buf := c[i:min(i+spiBufSize, len(c))]
+
+		if err := d.dc.Out(gpio.Low); err != nil {
+			return err
+		}
+		if err := d.c.Tx(buf, nil); err != nil {
+			return err
+		}
 	}
-	return d.c.Tx(c, nil)
+	return nil
 }
 
 var _ display.Drawer = &Dev{}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
